@@ -96,9 +96,6 @@ func TgtTargetBind(tid, tallow string) error {
 	return err
 }
 
-// tgtadm --mode target --op show
-// fixme
-
 // tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 2 --bstype sheepdog --backing-store unix:/var/lib/sheepdog/sock:dvp-vol1
 func TgtLunNew(tid, lun, vdiname string) error {
 	// Give the suffix for Docker Volume Plugin
@@ -114,7 +111,9 @@ func TgtLunNew(tid, lun, vdiname string) error {
 
 // tgtadm --lld iscsi --mode logicalunit --op delete --tid 1 --lun 2
 func TgtLunDelete(tid, lun string) error {
+	// Give the suffix for Docker Volume Plugin
 	log.Debugf("Begin utils.TgtLunDelete: %s, %s", tid, lun)
+
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "logicalunit",
 		"--op", "delete", "--tid", tid, "--lun", lun).CombinedOutput()
 	log.Debug("Result of TgtLunDelete: ", string(out))
@@ -161,12 +160,26 @@ func iscsiDisableDelete(tiqn, tportal string) (err error) {
 // iscsiadm -m session --rescan
 func iscsiRescan() bool {
 	log.Debugf("Begin utils.iscsiRescan")
-	out, err := exec.Command("sudo", "iscsiadm", "--mode", "session", "--rescan").CombinedOutput()
-	if err != nil {
-		log.Error("Error encountered in session rescan cmd: ", out)
-		return false
-	}
+	exec.Command("sudo", "iscsiadm", "--mode", "session", "--rescan").CombinedOutput()
+	//out, err := exec.Command("sudo", "iscsiadm", "--mode", "session", "--rescan").CombinedOutput()
+	//if err != nil {
+	//	log.Error("Error encountered in session rescan cmd: ", out)
+	//	return false
+	//}
 	return true
+}
+
+// echo 1 > /sys/block/sda/device/delete
+func iscsiDeleteDevice(scsi string) (err error) {
+	log.Debugf("Begin utils.iscsiDeleteDevice: %s", scsi)
+
+	cmd := "sudo echo 1 > /sys/block/" + scsi + "/device/delete"
+	_, err = exec.Command("sh", "-c", cmd).CombinedOutput()
+	if err != nil {
+		log.Debugf("Error during iscsi delete device: ", err)
+	}
+	return
+
 }
 
 // GetDeviceNameFromLun
@@ -179,6 +192,57 @@ func GetDeviceNameFromLun(tip, tport, tipn, lun string) string {
 	path := "/dev/disk/by-path/ip-" + tip + ":" + tport + "-iscsi-" + tipn + "-lun-" + lun
 	log.Debugf("path: %s", path)
 	return path
+}
+
+// GetLunFromName
+func GetLunFromDeviceName(vdiname string) (lun string) {
+	log.Debugf("Begin utils.GetLunFromDeviceName: %s", vdiname)
+	// lsblk -P -S --output HCTL,TRAN,MOUNTPOINT |grep -w test1
+	// HCTL="12:0:0:3" TRAN="iscsi" MOUNTPOINT="/mnt/sheepdog/test1"
+	// HCTL = Host:Channel:Target:Lun
+	cmd := "sudo lsblk -P -S --output HCTL,TRAN,MOUNTPOINT | grep iscsi | grep -w " + vdiname
+	log.Debugf("cmd: %s", cmd)
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
+	if err != nil {
+		log.Error("Failed to get lun num: ", err)
+		return
+	}
+	// devlist -> HCTL="12:0:0:3"
+	devlist := strings.Fields(string(out))
+
+	// pos -> 12
+	pos := strings.LastIndex(devlist[0], ":")
+	pos = pos + 1
+
+	// devlist[0][pos:] -> 3"
+	lun = strings.Trim(devlist[0][pos:], "\"")
+
+	return lun
+}
+
+// GetLunFromName
+func GetScsiNameFromDeviceName(vdiname string) (scsi string) {
+	log.Debugf("Begin utils.GetScsiNameFromDeviceName: %s", vdiname)
+	// lsblk -P -S --output NAME,TRAN,MOUNTPOINT |grep -w test1
+	// NAME="sdb" TRAN="iscsi" MOUNTPOINT="/mnt/sheepdog/test1"
+	cmd := "sudo lsblk -P -S --output NAME,TRAN,MOUNTPOINT | grep iscsi | grep -w " + vdiname
+	log.Debugf("cmd: %s", cmd)
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
+	if err != nil {
+		log.Error("Failed to get lun num: ", err)
+		return
+	}
+	// devlist -> NAME="sdb"
+	devlist := strings.Fields(string(out))
+
+	// pos -> 12
+	pos := strings.LastIndex(devlist[0], "=")
+	pos = pos + 1
+
+	// devlist[0][pos:] -> 3"
+	scsi = strings.Trim(devlist[0][pos:], "\"")
+
+	return scsi
 }
 
 // GetDeviceFileFromIscsiPath

@@ -187,7 +187,7 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	}
 
 	// iscsiadm -m session --rescan
-	log.Debug("sescan session")
+	log.Debug("rescan session")
 	iscsiRescan()
 
 	// mapping disk
@@ -221,6 +221,9 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
+	lun := GetLunFromDeviceName(r.Name)
+	scsi := GetScsiNameFromDeviceName(r.Name)
+
 	if umountErr := Umount(d.Conf.MountPoint + "/" + r.Name); umountErr != nil {
 		if umountErr.Error() == "Volume is not mounted" {
 			log.Warning("Request to unmount volume, but it's not mounted")
@@ -230,9 +233,14 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 		}
 	}
 
-	err := iscsiDisableDelete(d.Conf.TargetIqn, string(d.Conf.TargetBindIp+":"+d.Conf.TargetBindPort))
+	err := iscsiDeleteDevice(scsi)
 	if err != nil {
-		log.Debug("Error unit.iscsiLogin: ", err)
+		log.Debug("Error unit.iscsiDeleteDevice: ", err)
+	}
+
+	err = TgtLunDelete(d.Conf.TargetId, lun)
+	if err != nil {
+		log.Debug("Error unit.TgtLunDelete: ", err)
 	}
 
 	iscsiRescan()
