@@ -171,17 +171,18 @@ func iscsiDeleteDevice(scsi string) (err error) {
 		log.Debugf("Error during iscsi delete device: ", err)
 	}
 	return
-
 }
 
 // getDeviceNameFromLun
 func getDeviceNameFromLun(tip, tport, tipn, lun string) string {
 	log.Debugf("Begin utils.getDeviceNameFromLun: %s %s", tipn, lun)
 
-	// "sleep hack" should change
-	time.Sleep(3 * time.Second)
-
 	path := "/dev/disk/by-path/ip-" + tip + ":" + tport + "-iscsi-" + tipn + "-lun-" + lun
+
+	if waitForDetectDevice(path, 5) {
+		log.Debugf("volume path found: %s", path)
+	}
+
 	log.Debugf("path: %s", path)
 	return path
 }
@@ -311,6 +312,23 @@ func umount(mountpoint string) error {
 		}
 	}
 	return err
+}
+
+// waitForDetectDevice
+func waitForDetectDevice(device string, tries int) bool {
+	log.Info("Waiting for path")
+	for i := 0; i < tries; i++ {
+		_, err := os.Stat(device)
+		if err == nil {
+			log.Debug("path found: ", device)
+			return true
+		}
+		if err != nil && !os.IsNotExist(err) {
+			return false
+		}
+		time.Sleep(time.Second)
+	}
+	return false
 }
 
 // findVacantLun
