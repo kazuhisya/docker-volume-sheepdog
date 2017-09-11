@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	// VERSION release number
 	VERSION = "0.0.1"
 )
 

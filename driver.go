@@ -13,6 +13,7 @@ import (
 	"github.com/docker/go-plugins-helpers/volume"
 )
 
+// Config model
 type Config struct {
 	DefaultVolSz   string
 	MountPoint     string
@@ -23,6 +24,7 @@ type Config struct {
 	VdiSuffix      string
 }
 
+// SheepdogDriver model
 type SheepdogDriver struct {
 	Mutex *sync.Mutex
 	Conf  *Config
@@ -132,6 +134,7 @@ func newSheepdogDriver(cfgFile string) SheepdogDriver {
 	return d
 }
 
+// Create API
 func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 	log.Infof("Create: %s, %v", r.Name, r.Options)
 	var volumeSize string
@@ -164,6 +167,7 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 	return volume.Response{}
 }
 
+// Remove API
 func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	log.Infof("Remove: %s", r.Name)
 
@@ -184,6 +188,7 @@ func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	return volume.Response{}
 }
 
+// Path API
 func (d SheepdogDriver) Path(r volume.Request) volume.Response {
 	log.Infof("Path: %s", r.Name)
 	path := filepath.Join(d.Conf.MountPoint, r.Name)
@@ -191,6 +196,7 @@ func (d SheepdogDriver) Path(r volume.Request) volume.Response {
 	return volume.Response{Mountpoint: path}
 }
 
+// Mount API
 func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	log.Infof("Mount: %s", r.Name)
 	d.Mutex.Lock()
@@ -236,6 +242,7 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
 }
 
+// Unmount API
 func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	log.Infof("Unmount: %s", r.Name)
 	d.Mutex.Lock()
@@ -248,9 +255,8 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 		if umountErr.Error() == "Volume is not mounted" {
 			log.Warning("Request to unmount volume, but it's not mounted")
 			return volume.Response{}
-		} else {
-			return volume.Response{Err: umountErr.Error()}
 		}
+		return volume.Response{Err: umountErr.Error()}
 	}
 
 	err := iscsiDeleteDevice(scsi)
@@ -267,6 +273,7 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	return volume.Response{}
 }
 
+// Get API
 func (d SheepdogDriver) Get(r volume.Request) volume.Response {
 	log.Infof("Get: %s", r.Name)
 	path := filepath.Join(d.Conf.MountPoint, r.Name)
@@ -276,14 +283,14 @@ func (d SheepdogDriver) Get(r volume.Request) volume.Response {
 	vdiexist := dogVdiExist(vdiname)
 	if vdiexist == true {
 		return volume.Response{Volume: &volume.Volume{Name: r.Name, Mountpoint: path}}
-	} else {
-		log.Debugf("Failed to retrieve volume named: ", r.Name)
-		err := errors.New("Volume Not Found")
-		return volume.Response{Err: err.Error()}
 	}
 
+	log.Debugf("Failed to retrieve volume named: ", r.Name)
+	err := errors.New("Volume Not Found")
+	return volume.Response{Err: err.Error()}
 }
 
+// List API
 func (d SheepdogDriver) List(r volume.Request) volume.Response {
 	log.Info("List volumes:")
 	d.Mutex.Lock()
@@ -309,6 +316,7 @@ func (d SheepdogDriver) List(r volume.Request) volume.Response {
 	return volume.Response{Volumes: vols}
 }
 
+// Capabilities API
 func (d SheepdogDriver) Capabilities(r volume.Request) volume.Response {
 	var res volume.Response
 	res.Capabilities = volume.Capability{Scope: "global"}

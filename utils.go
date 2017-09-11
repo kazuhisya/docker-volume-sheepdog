@@ -65,11 +65,9 @@ func dogVdiExist(vdiname string) bool {
 	if string(out) != "" {
 		log.Debugf("vdi exist")
 		return true
-	} else {
-		log.Debugf("vdi not exist")
-		return false
 	}
-
+	log.Debugf("vdi not exist")
+	return false
 }
 
 // tgtadm --lld iscsi --mode target --op new --tid 1 --targetname iqn.2017-09.org.sheepdog-docker
