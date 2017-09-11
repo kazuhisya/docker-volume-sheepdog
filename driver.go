@@ -16,9 +16,9 @@ import (
 type Config struct {
 	DefaultVolSz   string
 	MountPoint     string
-	TargetId       string
+	TargetID       string
 	TargetIqn      string
-	TargetBindIp   string
+	TargetBindIP   string
 	TargetBindPort string
 	VdiSuffix      string
 }
@@ -46,14 +46,14 @@ func processConfig(cfg string) (Config, error) {
 		conf.DefaultVolSz = "10G"
 	}
 
-	if conf.TargetId == "" {
-		conf.TargetId = "1"
+	if conf.TargetID == "" {
+		conf.TargetID = "1"
 	}
 	if conf.TargetIqn == "" {
 		conf.TargetIqn = "iqn.2017-09.org.sheepdog-docker"
 	}
-	if conf.TargetBindIp == "" {
-		conf.TargetBindIp = "127.0.0.1"
+	if conf.TargetBindIP == "" {
+		conf.TargetBindIP = "127.0.0.1"
 	}
 	if conf.TargetBindPort == "" {
 		conf.TargetBindPort = "3260"
@@ -66,9 +66,9 @@ func processConfig(cfg string) (Config, error) {
 	log.Infof("Set MountPoint to: %s", conf.MountPoint)
 	log.Infof("Set DefaultVolSz to: %s", conf.DefaultVolSz)
 
-	log.Infof("Set TargetId to: %s", conf.TargetId)
+	log.Infof("Set TargetID to: %s", conf.TargetID)
 	log.Infof("Set TargetIqn to: %s", conf.TargetIqn)
-	log.Infof("Set TargetBindIp to: %s", conf.TargetBindIp)
+	log.Infof("Set TargetBindIP to: %s", conf.TargetBindIP)
 	log.Infof("Set TargetBindPort to: %s", conf.TargetBindPort)
 
 	log.Infof("Set VdiSuffix to: %s", conf.VdiSuffix)
@@ -108,19 +108,19 @@ func prepareTarget(tid string, tiqn string, tip string, tport string) bool {
 func newSheepdogDriver(cfgFile string) SheepdogDriver {
 	conf, err := processConfig(cfgFile)
 	if err != nil {
-		log.Fatal("Error processing cinder driver config file: ", err)
+		log.Fatal("Error processing sheepdog driver config file: ", err)
 	}
 
-	targetid := conf.TargetId
+	targetid := conf.TargetID
 	targetiqn := conf.TargetIqn
-	targetbindip := conf.TargetBindIp
+	targetbindip := conf.TargetBindIP
 	targetbindport := conf.TargetBindPort
 	prepareTarget(targetid, targetiqn, targetbindip, targetbindport)
 
 	_, err = os.Lstat(conf.MountPoint)
 	if os.IsNotExist(err) {
 		if err := os.MkdirAll(conf.MountPoint, 0755); err != nil {
-			log.Fatal("Failed to create Mount directory during driver init: %v", err)
+			log.Errorf("Failed to create Mount directory during driver init: %v", err)
 		}
 	}
 
@@ -198,10 +198,10 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 
 	// target new
 	log.Debug("create new lun")
-	lun := findVacantLun(d.Conf.TargetId)
+	lun := findVacantLun(d.Conf.TargetID)
 	log.Debug("lun: %s", lun)
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
-	err := tgtLunNew(d.Conf.TargetId, lun, vdiname)
+	err := tgtLunNew(d.Conf.TargetID, lun, vdiname)
 	if err != nil {
 		log.Fatal("Error create new lun: ", err)
 	}
@@ -211,7 +211,7 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	iscsiRescan()
 
 	// mapping disk
-	device := getDeviceNameFromLun(d.Conf.TargetBindIp, d.Conf.TargetBindPort, d.Conf.TargetIqn, lun)
+	device := getDeviceNameFromLun(d.Conf.TargetBindIP, d.Conf.TargetBindPort, d.Conf.TargetIqn, lun)
 	realdevice := strings.TrimSpace(getDeviceFileFromIscsiPath(device))
 	log.Debug("realdevice: %s", realdevice)
 
@@ -258,7 +258,7 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 		log.Debug("Error unit.iscsiDeleteDevice: ", err)
 	}
 
-	err = tgtLunDelete(d.Conf.TargetId, lun)
+	err = tgtLunDelete(d.Conf.TargetID, lun)
 	if err != nil {
 		log.Debug("Error unit.tgtLunDelete: ", err)
 	}

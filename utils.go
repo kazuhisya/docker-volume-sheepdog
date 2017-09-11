@@ -313,15 +313,15 @@ func umount(mountpoint string) error {
 	return err
 }
 
-// find_vacant_lun
-func findVacantLun(tid string) (next_vacant_lun string) {
+// findVacantLun
+func findVacantLun(tid string) (nextVacantLun string) {
 	var (
 		fp         *os.File
-		tgt_found  int
-		curr_lun_i int
+		tgtFound   int
+		currLunInt int
 	)
-	tgt_found = 0
-	next_vacant_lun_int := 0
+	tgtFound = 0
+	nextVacantLunInt := 0
 
 	log.Debugf("Begin utils.findVacantLun")
 
@@ -345,24 +345,24 @@ func findVacantLun(tid string) (next_vacant_lun string) {
 
 	for scanner.Scan() {
 		// Check if we finished going over this target
-		if (tgt_found == 1) && (strings.Contains(scanner.Text(), "Target") == true) {
+		if (tgtFound == 1) && (strings.Contains(scanner.Text(), "Target") == true) {
 			break
 		}
 		// Check if we found the requested target
 		if strings.Contains(scanner.Text(), ("Target "+tid+":")) == true {
-			tgt_found = 1
+			tgtFound = 1
 			continue
 		}
-		if (strings.Contains(scanner.Text(), "LUN:") == true) && (tgt_found == 1) {
-			curr_lun := strings.Fields(scanner.Text())
-			curr_lun_i, err = strconv.Atoi(curr_lun[1])
+		if (strings.Contains(scanner.Text(), "LUN:") == true) && (tgtFound == 1) {
+			currLun := strings.Fields(scanner.Text())
+			currLunInt, err = strconv.Atoi(currLun[1])
 			if err != nil {
 				panic(err)
 			}
-			if curr_lun_i > next_vacant_lun_int {
+			if currLunInt > nextVacantLunInt {
 				break
 			} else {
-				next_vacant_lun_int = next_vacant_lun_int + 1
+				nextVacantLunInt = nextVacantLunInt + 1
 			}
 		}
 	}
@@ -371,6 +371,6 @@ func findVacantLun(tid string) (next_vacant_lun string) {
 		panic(err)
 	}
 
-	next_vacant_lun = strconv.Itoa(next_vacant_lun_int)
-	return next_vacant_lun
+	nextVacantLun = strconv.Itoa(nextVacantLunInt)
+	return nextVacantLun
 }
