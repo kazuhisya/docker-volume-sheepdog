@@ -23,28 +23,28 @@ func iscmdSupported(execCmd string) bool {
 }
 
 // dog vdi create volume 10G
-func DogVdiCreate(vdiname, vdisize string) error {
+func dogVdiCreate(vdiname, vdisize string) error {
 	// Give the suffix for Docker Volume Plugin
 	vdiname = "dvp-" + vdiname
-	log.Debugf("Begin utils.DogVdiCreate: %s, %s", vdiname, vdisize)
+	log.Debugf("Begin utils.dogVdiCreate: %s, %s", vdiname, vdisize)
 	out, err := exec.Command("sudo", "dog", "vdi", "create", vdiname, vdisize, "-v").CombinedOutput()
-	log.Debug("Result of DogVdiCreate: ", string(out))
+	log.Debug("Result of dogVdiCreate: ", string(out))
 	return err
 }
 
 // dog vdi delete volume
-func DogVdiDelete(vdiname string) error {
+func dogVdiDelete(vdiname string) error {
 	// Give the suffix for Docker Volume Plugin
 	vdiname = "dvp-" + vdiname
-	log.Debugf("Begin utils.DogVdiDelete: %s", vdiname)
+	log.Debugf("Begin utils.dogVdiDelete: %s", vdiname)
 	out, err := exec.Command("sudo", "dog", "vdi", "delete", vdiname).CombinedOutput()
-	log.Debug("Result of DogVdiDelete: ", string(out))
+	log.Debug("Result of dogVdiDelete: ", string(out))
 	return err
 }
 
 // dog vdi list
-func DogVdiList() (list string) {
-	log.Debugf("Begin utils.DogVdiList:")
+func dogVdiList() (list string) {
+	log.Debugf("Begin utils.dogVdiList:")
 	cmd := "sudo dog vdi list -r |grep  ^= | grep dvp |cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -56,10 +56,10 @@ func DogVdiList() (list string) {
 }
 
 // dog vdi list (find)
-func DogVdiExist(vdiname string) bool {
+func dogVdiExist(vdiname string) bool {
 	// Give the suffix for Docker Volume Plugin
 	vdiname = "dvp-" + vdiname
-	log.Debugf("Begin utils.DogVdiExist: %s", vdiname)
+	log.Debugf("Begin utils.dogVdiExist: %s", vdiname)
 	cmd := "sudo dog vdi list -r |grep  ^= | grep " + vdiname + "|cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -79,44 +79,44 @@ func DogVdiExist(vdiname string) bool {
 }
 
 // tgtadm --lld iscsi --mode target --op new --tid 1 --targetname iqn.2017-09.org.sheepdog-docker
-func TgtTargetNew(tid, tname string) error {
-	log.Debugf("Begin utils.TgtTargetNew: %s, %s", tid, tname)
+func tgtTargetNew(tid, tname string) error {
+	log.Debugf("Begin utils.tgtTargetNew: %s, %s", tid, tname)
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "target",
 		"--op", "new", "--tid", tid, "--targetname", tname).CombinedOutput()
-	log.Debug("Result of TgtTargetNew: ", string(out))
+	log.Debug("Result of tgtTargetNew: ", string(out))
 	return err
 }
 
 // tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address 127.0.0.1
-func TgtTargetBind(tid, tallow string) error {
-	log.Debugf("Begin utils.TgtTargetBind: %s, %s", tid, tallow)
+func tgtTargetBind(tid, tallow string) error {
+	log.Debugf("Begin utils.tgtTargetBind: %s, %s", tid, tallow)
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "target",
 		"--op", "bind", "--tid", tid, "--initiator-address", tallow).CombinedOutput()
-	log.Debug("Result of TgtTargetBind: ", string(out))
+	log.Debug("Result of tgtTargetBind: ", string(out))
 	return err
 }
 
 // tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 2 --bstype sheepdog --backing-store unix:/var/lib/sheepdog/sock:dvp-vol1
-func TgtLunNew(tid, lun, vdiname string) error {
+func tgtLunNew(tid, lun, vdiname string) error {
 	// Give the suffix for Docker Volume Plugin
 	vdiname = "dvp-" + vdiname
-	log.Debugf("Begin utils.TgtLunNew: %s, %s, %s", tid, lun, vdiname)
+	log.Debugf("Begin utils.tgtLunNew: %s, %s, %s", tid, lun, vdiname)
 	bstore := "unix:/var/lib/sheepdog/sock:" + vdiname
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "logicalunit",
 		"--op", "new", "--tid", tid, "--lun", lun, "--bstype", "sheepdog",
 		"--backing-store", bstore).CombinedOutput()
-	log.Debug("Result of TgtLunNew: ", string(out))
+	log.Debug("Result of tgtLunNew: ", string(out))
 	return err
 }
 
 // tgtadm --lld iscsi --mode logicalunit --op delete --tid 1 --lun 2
-func TgtLunDelete(tid, lun string) error {
+func tgtLunDelete(tid, lun string) error {
 	// Give the suffix for Docker Volume Plugin
-	log.Debugf("Begin utils.TgtLunDelete: %s, %s", tid, lun)
+	log.Debugf("Begin utils.tgtLunDelete: %s, %s", tid, lun)
 
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "logicalunit",
 		"--op", "delete", "--tid", tid, "--lun", lun).CombinedOutput()
-	log.Debug("Result of TgtLunDelete: ", string(out))
+	log.Debug("Result of tgtLunDelete: ", string(out))
 	return err
 }
 
@@ -182,9 +182,9 @@ func iscsiDeleteDevice(scsi string) (err error) {
 
 }
 
-// GetDeviceNameFromLun
-func GetDeviceNameFromLun(tip, tport, tipn, lun string) string {
-	log.Debugf("Begin utils.GetDeviceNameFromLun: %s %s", tipn, lun)
+// getDeviceNameFromLun
+func getDeviceNameFromLun(tip, tport, tipn, lun string) string {
+	log.Debugf("Begin utils.getDeviceNameFromLun: %s %s", tipn, lun)
 
 	// "sleep hack" should change
 	time.Sleep(3 * time.Second)
@@ -194,9 +194,9 @@ func GetDeviceNameFromLun(tip, tport, tipn, lun string) string {
 	return path
 }
 
-// GetLunFromName
-func GetLunFromDeviceName(vdiname string) (lun string) {
-	log.Debugf("Begin utils.GetLunFromDeviceName: %s", vdiname)
+// getLunFromName
+func getLunFromDeviceName(vdiname string) (lun string) {
+	log.Debugf("Begin utils.getLunFromDeviceName: %s", vdiname)
 	// lsblk -P -S --output HCTL,TRAN,MOUNTPOINT |grep -w test1
 	// HCTL="12:0:0:3" TRAN="iscsi" MOUNTPOINT="/mnt/sheepdog/test1"
 	// HCTL = Host:Channel:Target:Lun
@@ -220,9 +220,9 @@ func GetLunFromDeviceName(vdiname string) (lun string) {
 	return lun
 }
 
-// GetLunFromName
-func GetScsiNameFromDeviceName(vdiname string) (scsi string) {
-	log.Debugf("Begin utils.GetScsiNameFromDeviceName: %s", vdiname)
+// getLunFromName
+func getScsiNameFromDeviceName(vdiname string) (scsi string) {
+	log.Debugf("Begin utils.getScsiNameFromDeviceName: %s", vdiname)
 	// lsblk -P -S --output NAME,TRAN,MOUNTPOINT |grep -w test1
 	// NAME="sdb" TRAN="iscsi" MOUNTPOINT="/mnt/sheepdog/test1"
 	cmd := "sudo lsblk -P -S --output NAME,TRAN,MOUNTPOINT | grep iscsi | grep -w " + vdiname
@@ -245,9 +245,9 @@ func GetScsiNameFromDeviceName(vdiname string) (scsi string) {
 	return scsi
 }
 
-// GetDeviceFileFromIscsiPath
-func GetDeviceFileFromIscsiPath(iscsiPath string) (devFile string) {
-	log.Debug("Begin utils.GetDeviceFileFromIscsiPath: ", iscsiPath)
+// getDeviceFileFromIscsiPath
+func getDeviceFileFromIscsiPath(iscsiPath string) (devFile string) {
+	log.Debug("Begin utils.getDeviceFileFromIscsiPath: ", iscsiPath)
 	out, err := exec.Command("sudo", "ls", "-la", iscsiPath).CombinedOutput()
 	if err != nil {
 		log.Debug(err)
@@ -261,9 +261,9 @@ func GetDeviceFileFromIscsiPath(iscsiPath string) (devFile string) {
 	return
 }
 
-// GetFSType
-func GetFSType(device string) string {
-	log.Debugf("Begin utils.GetFSType: %s", device)
+// getFSType
+func getFSType(device string) string {
+	log.Debugf("Begin utils.getFSType: %s", device)
 	fsType := ""
 	out, err := exec.Command("blkid", device).CombinedOutput()
 	if err != nil {
@@ -281,9 +281,9 @@ func GetFSType(device string) string {
 	return fsType
 }
 
-// FormatVolume
-func FormatVolume(device, fsType string) error {
-	log.Debugf("Begin utils.FormatVolume: %s, %s", device, fsType)
+// formatVolume
+func formatVolume(device, fsType string) error {
+	log.Debugf("Begin utils.formatVolume: %s, %s", device, fsType)
 	cmd := "mkfs.ext4"
 	if fsType == "xfs" {
 		cmd = "mkfs.xfs"
@@ -295,9 +295,9 @@ func FormatVolume(device, fsType string) error {
 	return err
 }
 
-// Mount
-func Mount(device, mountpoint string) error {
-	log.Debugf("Begin utils.Mount device: %s on: %s", device, mountpoint)
+// mount
+func mount(device, mountpoint string) error {
+	log.Debugf("Begin utils.mount device: %s on: %s", device, mountpoint)
 	out, err := exec.Command("mkdir", "-p", mountpoint).CombinedOutput()
 	out, err = exec.Command("mount", device, mountpoint).CombinedOutput()
 	log.Debug("Response from mount ", device, " at ", mountpoint, ": ", string(out))
@@ -307,8 +307,8 @@ func Mount(device, mountpoint string) error {
 	return err
 }
 
-// Umount
-func Umount(mountpoint string) error {
+// umount
+func umount(mountpoint string) error {
 	log.Debugf("Begin utils.Umount: %s", mountpoint)
 	out, err := exec.Command("umount", mountpoint).CombinedOutput()
 	if err != nil {
@@ -322,7 +322,7 @@ func Umount(mountpoint string) error {
 }
 
 // find_vacant_lun
-func FindVacantLun(tid string) (next_vacant_lun string) {
+func findVacantLun(tid string) (next_vacant_lun string) {
 	var (
 		fp         *os.File
 		tgt_found  int
@@ -331,7 +331,7 @@ func FindVacantLun(tid string) (next_vacant_lun string) {
 	tgt_found = 0
 	next_vacant_lun_int := 0
 
-	log.Debugf("Begin utils.FindVacantLun")
+	log.Debugf("Begin utils.findVacantLun")
 
 	// tgtadm --mode target --op show
 	out, err := exec.Command("sudo", "tgtadm", "--mode", "target", "--op", "show").CombinedOutput()

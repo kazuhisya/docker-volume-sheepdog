@@ -71,16 +71,16 @@ func processConfig(cfg string) (Config, error) {
 }
 
 func prepareTarget(tid string, tiqn string, tip string, tport string) bool {
-	log.Infof("Start TgtTargetNew")
-	err := TgtTargetNew(tid, tiqn)
+	log.Infof("Start tgtTargetNew")
+	err := tgtTargetNew(tid, tiqn)
 	if err != nil {
-		log.Debug("Error unit.TgtTargetNew: ", err)
+		log.Debug("Error unit.tgtTargetNew: ", err)
 	}
 
-	log.Infof("Start TgtTargetBind")
-	err = TgtTargetBind(tid, tip)
+	log.Infof("Start tgtTargetBind")
+	err = tgtTargetBind(tid, tip)
 	if err != nil {
-		log.Debug("Error unit.TgtTargetBind: ", err)
+		log.Debug("Error unit.tgtTargetBind: ", err)
 	}
 
 	log.Infof("Start iscsiDiscovery")
@@ -131,7 +131,7 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
-	err := DogVdiCreate(r.Name, d.Conf.DefaultVolSz)
+	err := dogVdiCreate(r.Name, d.Conf.DefaultVolSz)
 	if err != nil {
 		err := errors.New("Failed to create vdi")
 		log.Error(err)
@@ -149,7 +149,7 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	log.Infof("Remove: %s", r.Name)
 
-	err := DogVdiDelete(r.Name)
+	err := dogVdiDelete(r.Name)
 	if err != nil {
 		err := errors.New("Failed to delete vdi")
 		log.Error(err)
@@ -179,9 +179,9 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 
 	// target new
 	log.Debug("create new lun")
-	lun := FindVacantLun(d.Conf.TargetId)
+	lun := findVacantLun(d.Conf.TargetId)
 	log.Debug("lun: %s", lun)
-	err := TgtLunNew(d.Conf.TargetId, lun, r.Name)
+	err := tgtLunNew(d.Conf.TargetId, lun, r.Name)
 	if err != nil {
 		log.Fatal("Error create new lun: ", err)
 	}
@@ -191,14 +191,14 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	iscsiRescan()
 
 	// mapping disk
-	device := GetDeviceNameFromLun(d.Conf.TargetBindIp, d.Conf.TargetBindPort, d.Conf.TargetIqn, lun)
-	realdevice := strings.TrimSpace(GetDeviceFileFromIscsiPath(device))
+	device := getDeviceNameFromLun(d.Conf.TargetBindIp, d.Conf.TargetBindPort, d.Conf.TargetIqn, lun)
+	realdevice := strings.TrimSpace(getDeviceFileFromIscsiPath(device))
 	log.Debug("realdevice: %s", realdevice)
 
 	// mkfs
-	if GetFSType(realdevice) == "" {
+	if getFSType(realdevice) == "" {
 		log.Debugf("Formatting device")
-		err := FormatVolume(realdevice, "xfs")
+		err := formatVolume(realdevice, "xfs")
 		if err != nil {
 			err := errors.New("Failed to format device")
 			log.Error(err)
@@ -207,7 +207,7 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	}
 
 	// mount
-	if mountErr := Mount(realdevice, d.Conf.MountPoint+"/"+r.Name); mountErr != nil {
+	if mountErr := mount(realdevice, d.Conf.MountPoint+"/"+r.Name); mountErr != nil {
 		err := errors.New("Problem mounting docker volume ")
 		log.Error(err)
 		return volume.Response{Err: err.Error()}
@@ -221,10 +221,10 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
-	lun := GetLunFromDeviceName(r.Name)
-	scsi := GetScsiNameFromDeviceName(r.Name)
+	lun := getLunFromDeviceName(r.Name)
+	scsi := getScsiNameFromDeviceName(r.Name)
 
-	if umountErr := Umount(d.Conf.MountPoint + "/" + r.Name); umountErr != nil {
+	if umountErr := umount(d.Conf.MountPoint + "/" + r.Name); umountErr != nil {
 		if umountErr.Error() == "Volume is not mounted" {
 			log.Warning("Request to unmount volume, but it's not mounted")
 			return volume.Response{}
@@ -238,9 +238,9 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 		log.Debug("Error unit.iscsiDeleteDevice: ", err)
 	}
 
-	err = TgtLunDelete(d.Conf.TargetId, lun)
+	err = tgtLunDelete(d.Conf.TargetId, lun)
 	if err != nil {
-		log.Debug("Error unit.TgtLunDelete: ", err)
+		log.Debug("Error unit.tgtLunDelete: ", err)
 	}
 
 	iscsiRescan()
@@ -252,7 +252,7 @@ func (d SheepdogDriver) Get(r volume.Request) volume.Response {
 	path := filepath.Join(d.Conf.MountPoint, r.Name)
 	log.Infof("Get path: %s", path)
 
-	vdiexist := DogVdiExist(r.Name)
+	vdiexist := dogVdiExist(r.Name)
 	if vdiexist == true {
 		return volume.Response{Volume: &volume.Volume{Name: r.Name, Mountpoint: path}}
 	} else {
@@ -274,7 +274,7 @@ func (d SheepdogDriver) List(r volume.Request) volume.Response {
 		return volume.Response{}
 	}
 
-	out := DogVdiList()
+	out := dogVdiList()
 	for _, line := range strings.Split(string(out), "\n") {
 		if strings.Contains(line, "dvp") {
 			volname := strings.Replace(line, "dvp-", "", -1)
