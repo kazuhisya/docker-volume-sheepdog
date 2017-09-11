@@ -128,10 +128,21 @@ func newSheepdogDriver(cfgFile string) SheepdogDriver {
 
 func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 	log.Infof("Create: %s, %v", r.Name, r.Options)
+	var volumeSize string
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
-	err := dogVdiCreate(r.Name, d.Conf.DefaultVolSz)
+	// Handle options (unrecognized options are silently ignored):
+	// size: If there is no explicit designation, use the value of
+	// config or default setting.
+	if optsSize, ok := r.Options["size"]; ok {
+		volumeSize = optsSize
+	} else {
+		// Assume the default root
+		volumeSize = d.Conf.DefaultVolSz
+	}
+
+	err := dogVdiCreate(r.Name, volumeSize)
 	if err != nil {
 		err := errors.New("Failed to create vdi")
 		log.Error(err)

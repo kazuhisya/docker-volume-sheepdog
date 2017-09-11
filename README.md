@@ -28,6 +28,16 @@ First create a volume:
 $ docker volume create -d sheepdog vol1
 ```
 
+In this case, it will be created with default volume size (`DefaultVolSz` is be used.)
+
+
+If you want to specify it explicitly, can use the `-o size=` option.
+The syntax is equivalent to the `dog` command.(`10G`, `10M` ...)
+
+```
+$ docker volume create -d sheepdog vol1 -o size=12G
+```
+
 Then use the volume by passing the name (`vol1`):
 
 ```
