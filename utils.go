@@ -24,8 +24,6 @@ func iscmdSupported(execCmd string) bool {
 
 // dog vdi create volume 10G
 func dogVdiCreate(vdiname, vdisize string) error {
-	// Give the suffix for Docker Volume Plugin
-	vdiname = "dvp-" + vdiname
 	log.Debugf("Begin utils.dogVdiCreate: %s, %s", vdiname, vdisize)
 	out, err := exec.Command("sudo", "dog", "vdi", "create", vdiname, vdisize, "-v").CombinedOutput()
 	log.Debug("Result of dogVdiCreate: ", string(out))
@@ -34,8 +32,6 @@ func dogVdiCreate(vdiname, vdisize string) error {
 
 // dog vdi delete volume
 func dogVdiDelete(vdiname string) error {
-	// Give the suffix for Docker Volume Plugin
-	vdiname = "dvp-" + vdiname
 	log.Debugf("Begin utils.dogVdiDelete: %s", vdiname)
 	out, err := exec.Command("sudo", "dog", "vdi", "delete", vdiname).CombinedOutput()
 	log.Debug("Result of dogVdiDelete: ", string(out))
@@ -43,9 +39,9 @@ func dogVdiDelete(vdiname string) error {
 }
 
 // dog vdi list
-func dogVdiList() (list string) {
+func dogVdiList(suffix string) (list string) {
 	log.Debugf("Begin utils.dogVdiList:")
-	cmd := "sudo dog vdi list -r |grep  ^= | grep dvp |cut -d' ' -f 2"
+	cmd := "sudo dog vdi list -r |grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to list vdi: ", err)
@@ -57,8 +53,6 @@ func dogVdiList() (list string) {
 
 // dog vdi list (find)
 func dogVdiExist(vdiname string) bool {
-	// Give the suffix for Docker Volume Plugin
-	vdiname = "dvp-" + vdiname
 	log.Debugf("Begin utils.dogVdiExist: %s", vdiname)
 	cmd := "sudo dog vdi list -r |grep  ^= | grep " + vdiname + "|cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
@@ -98,8 +92,6 @@ func tgtTargetBind(tid, tallow string) error {
 
 // tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 2 --bstype sheepdog --backing-store unix:/var/lib/sheepdog/sock:dvp-vol1
 func tgtLunNew(tid, lun, vdiname string) error {
-	// Give the suffix for Docker Volume Plugin
-	vdiname = "dvp-" + vdiname
 	log.Debugf("Begin utils.tgtLunNew: %s, %s, %s", tid, lun, vdiname)
 	bstore := "unix:/var/lib/sheepdog/sock:" + vdiname
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "logicalunit",

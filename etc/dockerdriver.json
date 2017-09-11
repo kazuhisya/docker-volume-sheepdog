@@ -4,5 +4,6 @@
     "TargetId": "1",
     "TargetIqn": "iqn.2017-09.org.sheepdog-project",
     "TargetBindIp": "127.0.0.1",
-    "TargetBindPort": "3260"
+    "TargetBindPort": "3260",
+    "DogSuffix": "dvp"
 }

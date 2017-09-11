@@ -20,6 +20,7 @@ type Config struct {
 	TargetIqn      string
 	TargetBindIp   string
 	TargetBindPort string
+	VdiSuffix      string
 }
 
 type SheepdogDriver struct {
@@ -57,6 +58,9 @@ func processConfig(cfg string) (Config, error) {
 	if conf.TargetBindPort == "" {
 		conf.TargetBindPort = "3260"
 	}
+	if conf.VdiSuffix == "" {
+		conf.VdiSuffix = "dvp"
+	}
 
 	log.Infof("Using config file: %s", cfg)
 	log.Infof("Set MountPoint to: %s", conf.MountPoint)
@@ -66,6 +70,8 @@ func processConfig(cfg string) (Config, error) {
 	log.Infof("Set TargetIqn to: %s", conf.TargetIqn)
 	log.Infof("Set TargetBindIp to: %s", conf.TargetBindIp)
 	log.Infof("Set TargetBindPort to: %s", conf.TargetBindPort)
+
+	log.Infof("Set VdiSuffix to: %s", conf.VdiSuffix)
 
 	return conf, nil
 }
@@ -142,7 +148,8 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 		volumeSize = d.Conf.DefaultVolSz
 	}
 
-	err := dogVdiCreate(r.Name, volumeSize)
+	vdiname := d.Conf.VdiSuffix + "-" + r.Name
+	err := dogVdiCreate(vdiname, volumeSize)
 	if err != nil {
 		err := errors.New("Failed to create vdi")
 		log.Error(err)
@@ -160,7 +167,8 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	log.Infof("Remove: %s", r.Name)
 
-	err := dogVdiDelete(r.Name)
+	vdiname := d.Conf.VdiSuffix + "-" + r.Name
+	err := dogVdiDelete(vdiname)
 	if err != nil {
 		err := errors.New("Failed to delete vdi")
 		log.Error(err)
@@ -192,7 +200,8 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	log.Debug("create new lun")
 	lun := findVacantLun(d.Conf.TargetId)
 	log.Debug("lun: %s", lun)
-	err := tgtLunNew(d.Conf.TargetId, lun, r.Name)
+	vdiname := d.Conf.VdiSuffix + "-" + r.Name
+	err := tgtLunNew(d.Conf.TargetId, lun, vdiname)
 	if err != nil {
 		log.Fatal("Error create new lun: ", err)
 	}
@@ -263,7 +272,8 @@ func (d SheepdogDriver) Get(r volume.Request) volume.Response {
 	path := filepath.Join(d.Conf.MountPoint, r.Name)
 	log.Infof("Get path: %s", path)
 
-	vdiexist := dogVdiExist(r.Name)
+	vdiname := d.Conf.VdiSuffix + "-" + r.Name
+	vdiexist := dogVdiExist(vdiname)
 	if vdiexist == true {
 		return volume.Response{Volume: &volume.Volume{Name: r.Name, Mountpoint: path}}
 	} else {
@@ -285,10 +295,11 @@ func (d SheepdogDriver) List(r volume.Request) volume.Response {
 		return volume.Response{}
 	}
 
-	out := dogVdiList()
+	out := dogVdiList(d.Conf.VdiSuffix)
 	for _, line := range strings.Split(string(out), "\n") {
-		if strings.Contains(line, "dvp") {
-			volname := strings.Replace(line, "dvp-", "", -1)
+		if strings.Contains(line, d.Conf.VdiSuffix) {
+			searchname := d.Conf.VdiSuffix + "-"
+			volname := strings.Replace(line, searchname, "", -1)
 			vol := &volume.Volume{Name: volname, Mountpoint: (path + "/" + volname)}
 			vols = append(vols, vol)
 			log.Debug("vol: %s", vol)
