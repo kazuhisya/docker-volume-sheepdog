@@ -74,3 +74,7 @@ Remove the volume:
 $ docker volume rm vol1
 ```
 
+
+## Disclaimer
+
+This repository and all files that are included in this, there is no relationship at all with the upstream and vendor.
