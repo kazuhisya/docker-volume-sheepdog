@@ -54,7 +54,7 @@ func dogVdiList(suffix string) (list string) {
 // dog vdi list (find)
 func dogVdiExist(vdiname string) bool {
 	log.Debugf("Begin utils.dogVdiExist: %s", vdiname)
-	cmd := "sudo dog vdi list -r |grep  ^= | grep " + vdiname + "|cut -d' ' -f 2"
+	cmd := "sudo dog vdi list -r |grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to list vdi: ", err)
