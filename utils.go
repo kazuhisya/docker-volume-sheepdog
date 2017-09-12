@@ -101,7 +101,6 @@ func tgtLunNew(tid, lun, vdiname string) error {
 
 // tgtadm --lld iscsi --mode logicalunit --op delete --tid 1 --lun 2
 func tgtLunDelete(tid, lun string) error {
-	// Give the suffix for Docker Volume Plugin
 	log.Debugf("Begin utils.tgtLunDelete: %s, %s", tid, lun)
 
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "logicalunit",
@@ -151,11 +150,6 @@ func iscsiDisableDelete(tiqn, tportal string) (err error) {
 func iscsiRescan() bool {
 	log.Debugf("Begin utils.iscsiRescan")
 	exec.Command("sudo", "iscsiadm", "--mode", "session", "--rescan").CombinedOutput()
-	//out, err := exec.Command("sudo", "iscsiadm", "--mode", "session", "--rescan").CombinedOutput()
-	//if err != nil {
-	//	log.Error("Error encountered in session rescan cmd: ", out)
-	//	return false
-	//}
 	return true
 }
 
@@ -230,7 +224,7 @@ func getScsiNameFromDeviceName(vdiname string) (scsi string) {
 	pos := strings.LastIndex(devlist[0], "=")
 	pos = pos + 1
 
-	// devlist[0][pos:] -> 3"
+	// devlist[0][pos:] -> sdb"
 	scsi = strings.Trim(devlist[0][pos:], "\"")
 
 	return scsi
@@ -314,7 +308,6 @@ func isAlreadyMountingThisVolume(mountpoint string) bool {
 		panic(err)
 	}
 	if outInt != 0 {
-		// mount point found, already used
 		log.Debugf("mount point found, already used")
 		return true
 	}

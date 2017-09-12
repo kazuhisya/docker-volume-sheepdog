@@ -151,7 +151,7 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 	if optsSize, ok := r.Options["size"]; ok {
 		volumeSize = optsSize
 	} else {
-		// Assume the default root
+		// Assume the default volume size
 		volumeSize = d.Conf.DefaultVolSz
 	}
 
