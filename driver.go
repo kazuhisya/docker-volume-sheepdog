@@ -22,6 +22,7 @@ type Config struct {
 	TargetBindIP   string
 	TargetBindPort string
 	VdiSuffix      string
+	mountCount     int
 }
 
 // SheepdogDriver model
@@ -171,6 +172,13 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	log.Infof("Remove: %s", r.Name)
 
+	log.Debug("Count %s", d.Conf.mountCount)
+	if d.Conf.mountCount != 0 {
+		err := errors.New("This volume is currently used by other container")
+		log.Error(err)
+		return volume.Response{Err: err.Error()}
+	}
+
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
 	err := dogVdiDelete(vdiname)
 	if err != nil {
@@ -201,6 +209,24 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	log.Infof("Mount: %s", r.Name)
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
+
+	// make sure that it is already mounting for another container
+	if isAlreadyMountingThisVolume(d.Conf.MountPoint+"/"+r.Name) == true {
+		// already mounting
+		log.Infof("Mountpoint is already used: %s", r.Name)
+		d.Conf.mountCount++
+		log.Debug("Count %s", d.Conf.mountCount)
+		// skip all and return now
+		return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
+	}
+	// double check
+	log.Debug("Count %s", d.Conf.mountCount)
+	if d.Conf.mountCount != 0 {
+		log.Infof("Mountpoint is already used: %s", r.Name)
+		d.Conf.mountCount++
+		log.Debug("Count %s", d.Conf.mountCount)
+		return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
+	}
 
 	// target new
 	log.Debug("create new lun")
@@ -239,6 +265,10 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 		return volume.Response{Err: err.Error()}
 	}
 
+	log.Debug("Count %s", d.Conf.mountCount)
+	d.Conf.mountCount++
+	log.Debug("Count %s", d.Conf.mountCount)
+
 	return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
 }
 
@@ -248,28 +278,38 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
+	log.Debug("Count %s", d.Conf.mountCount)
+	d.Conf.mountCount--
+	log.Debug("Count %s", d.Conf.mountCount)
+
 	lun := getLunFromDeviceName(r.Name)
 	scsi := getScsiNameFromDeviceName(r.Name)
 
-	if umountErr := umount(d.Conf.MountPoint + "/" + r.Name); umountErr != nil {
-		if umountErr.Error() == "Volume is not mounted" {
-			log.Warning("Request to unmount volume, but it's not mounted")
-			return volume.Response{}
+	if d.Conf.mountCount <= 0 {
+		if umountErr := umount(d.Conf.MountPoint + "/" + r.Name); umountErr != nil {
+			if umountErr.Error() == "Volume is not mounted" {
+				log.Warning("Request to unmount volume, but it's not mounted")
+				return volume.Response{}
+			}
+			return volume.Response{Err: umountErr.Error()}
 		}
-		return volume.Response{Err: umountErr.Error()}
-	}
 
-	err := iscsiDeleteDevice(scsi)
-	if err != nil {
-		log.Debug("Error unit.iscsiDeleteDevice: ", err)
-	}
+		err := iscsiDeleteDevice(scsi)
+		if err != nil {
+			log.Debug("Error unit.iscsiDeleteDevice: ", err)
+		}
 
-	err = tgtLunDelete(d.Conf.TargetID, lun)
-	if err != nil {
-		log.Debug("Error unit.tgtLunDelete: ", err)
-	}
+		err = tgtLunDelete(d.Conf.TargetID, lun)
+		if err != nil {
+			log.Debug("Error unit.tgtLunDelete: ", err)
+		}
 
-	iscsiRescan()
+		iscsiRescan()
+
+		log.Debug("Count %s", d.Conf.mountCount)
+		d.Conf.mountCount = 0
+		log.Debug("Count %s", d.Conf.mountCount)
+	}
 	return volume.Response{}
 }
 

@@ -298,6 +298,30 @@ func mount(device, mountpoint string) error {
 	return err
 }
 
+func isAlreadyMountingThisVolume(mountpoint string) bool {
+	log.Debugf("Begin utils.isAlreadyMountingThisVolume: ", mountpoint)
+	// lsblk -P -S --output MOUNTPOINT  |grep -w /mnt/sheepdog/test1
+	// null or line > 1
+	cmd := "sudo lsblk -P -S --output MOUNTPOINT | grep -w " + mountpoint + " | wc -l"
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
+	if err != nil {
+		log.Error("Failed to lsblk: ", err)
+		return false
+	}
+
+	outInt, err := strconv.Atoi(strings.TrimRight(string(out), "\n"))
+	if err != nil {
+		panic(err)
+	}
+	if outInt != 0 {
+		// mount point found, already used
+		log.Debugf("mount point found, already used")
+		return true
+	}
+	log.Debugf("mount point not found, can use it")
+	return false
+}
+
 // umount
 func umount(mountpoint string) error {
 	log.Debugf("Begin utils.Umount: %s", mountpoint)
