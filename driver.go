@@ -202,6 +202,14 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
+	// make sure that it is already mounting for another container
+	if isAlreadyMountingThisVolume(d.Conf.MountPoint+"/"+r.Name) == true {
+		// already mounting
+		log.Infof("Mountpoint is already used: %s", r.Name)
+		// skip all and return now
+		return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
+	}
+
 	// target new
 	log.Debug("create new lun")
 	lun := findVacantLun(d.Conf.TargetID)
