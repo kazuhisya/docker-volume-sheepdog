@@ -22,7 +22,7 @@ type Config struct {
 	TargetBindIP   string
 	TargetBindPort string
 	VdiSuffix      string
-	mountCount     int
+	mountCount     map[string]int
 }
 
 // SheepdogDriver model
@@ -64,6 +64,9 @@ func processConfig(cfg string) (Config, error) {
 	if conf.VdiSuffix == "" {
 		conf.VdiSuffix = "dvp"
 	}
+
+	// Max 128 Lun, include lun 0 ?
+	conf.mountCount = make(map[string]int, 127)
 
 	log.Infof("Using config file: %s", cfg)
 	log.Infof("Set MountPoint to: %s", conf.MountPoint)
@@ -172,12 +175,13 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	log.Infof("Remove: %s", r.Name)
 
-	log.Debug("Count %s", d.Conf.mountCount)
-	if d.Conf.mountCount != 0 {
+	log.Debug("Count %s", d.Conf.mountCount[r.Name])
+	if d.Conf.mountCount[r.Name] != 0 {
 		err := errors.New("This volume is currently used by other container")
 		log.Error(err)
 		return volume.Response{Err: err.Error()}
 	}
+	delete(d.Conf.mountCount, r.Name)
 
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
 	err := dogVdiDelete(vdiname)
@@ -214,17 +218,17 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	if isAlreadyMountingThisVolume(d.Conf.MountPoint+"/"+r.Name) == true {
 		// already mounting
 		log.Infof("Mountpoint is already used: %s", r.Name)
-		d.Conf.mountCount++
-		log.Debug("Count %s", d.Conf.mountCount)
+		d.Conf.mountCount[r.Name]++
+		log.Debug("Count %s", d.Conf.mountCount[r.Name])
 		// skip all and return now
 		return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
 	}
 	// double check
-	log.Debug("Count %s", d.Conf.mountCount)
-	if d.Conf.mountCount != 0 {
+	log.Debug("Count %s", d.Conf.mountCount[r.Name])
+	if d.Conf.mountCount[r.Name] != 0 {
 		log.Infof("Mountpoint is already used: %s", r.Name)
-		d.Conf.mountCount++
-		log.Debug("Count %s", d.Conf.mountCount)
+		d.Conf.mountCount[r.Name]++
+		log.Debug("Count %s", d.Conf.mountCount[r.Name])
 		return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
 	}
 
@@ -265,9 +269,9 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 		return volume.Response{Err: err.Error()}
 	}
 
-	log.Debug("Count %s", d.Conf.mountCount)
-	d.Conf.mountCount++
-	log.Debug("Count %s", d.Conf.mountCount)
+	log.Debug("Count %s", d.Conf.mountCount[r.Name])
+	d.Conf.mountCount[r.Name]++
+	log.Debug("Count %s", d.Conf.mountCount[r.Name])
 
 	return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}
 }
@@ -278,14 +282,14 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 	d.Mutex.Lock()
 	defer d.Mutex.Unlock()
 
-	log.Debug("Count %s", d.Conf.mountCount)
-	d.Conf.mountCount--
-	log.Debug("Count %s", d.Conf.mountCount)
+	log.Debug("Count %s", d.Conf.mountCount[r.Name])
+	d.Conf.mountCount[r.Name]--
+	log.Debug("Count %s", d.Conf.mountCount[r.Name])
 
 	lun := getLunFromDeviceName(r.Name)
 	scsi := getScsiNameFromDeviceName(r.Name)
 
-	if d.Conf.mountCount <= 0 {
+	if d.Conf.mountCount[r.Name] <= 0 {
 		if umountErr := umount(d.Conf.MountPoint + "/" + r.Name); umountErr != nil {
 			if umountErr.Error() == "Volume is not mounted" {
 				log.Warning("Request to unmount volume, but it's not mounted")
@@ -306,9 +310,16 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 
 		iscsiRescan()
 
-		log.Debug("Count %s", d.Conf.mountCount)
-		d.Conf.mountCount = 0
-		log.Debug("Count %s", d.Conf.mountCount)
+		log.Debug("Count %s", d.Conf.mountCount[r.Name])
+		d.Conf.mountCount[r.Name] = 0
+		log.Debug("Count %s", d.Conf.mountCount[r.Name])
+
+		path := filepath.Join(d.Conf.MountPoint, r.Name)
+		log.Debug("remove path: ", path)
+		if err := os.Remove(path); err != nil {
+			log.Errorf("Failed to remove Mount directory: %v", err)
+			return volume.Response{Err: err.Error()}
+		}
 	}
 	return volume.Response{}
 }
