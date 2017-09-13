@@ -1,0 +1,11 @@
+[Unit]
+Description=Docker Volume Plugin for Sheepdog
+Documentation=https://github.com/kazuhisya/docker-volume-sheepdog
+After=tgtd.service
+Requires=tgtd.service
+
+[Service]
+ExecStart=/sbin/docker-volume-sheepdog -config /etc/sheepdog/dockerdriver.json
+
+[Install]
+WantedBy=multi-user.target
