@@ -1,6 +1,5 @@
 *~
 docker-volume-sheepdog
-obj
-.idea
+dist
 vendor/*/
 *.patch

@@ -1,0 +1,53 @@
+%global commit      ${GIT_COMMIT}
+%global shortcommit %(c=%{commit}; echo ${c:0:7})
+%define dist %(sh /usr/lib/rpm/redhat/dist.sh)
+
+Name:           docker-volume-sheepdog
+Version:        ${DVPSD_VERSION}
+Release:        1.git%{shortcommit}%{?dist}
+Summary:        Docker Volume Plugin for Sheepdog
+License:        MIT
+URL:            https://github.com/kazuhisya/docker-volume-sheepdog
+Source0:        docker-volume-sheepdog
+Source1:        docker-volume-sheepdog.service
+Source2:        dockerdriver.json
+Source3:	README.md
+Source4:	LICENSE
+
+BuildRequires:  systemd-units
+Requires:       scsi-target-utils
+Requires:       iscsi-initiator-utils
+Requires:       sheepdog
+Requires:       /bin/lsblk
+Requires:       /sbin/mkfs.xfs
+
+%description
+Docker Volume plugin to create persistent volumes in a sheepdog cluster.
+
+%prep
+
+%build
+
+%install
+%{__rm} -rf %{buildroot}
+%{__install} -d %{buildroot}%{_sbindir}
+%{__install} -d %{buildroot}%{_unitdir}
+%{__install} -d %{buildroot}%{_sysconfdir}/sheepdog
+%{__install} -d %{buildroot}%{_defaultdocdir}/%{name}-%{version}
+
+%{__install} -p -m 0755 %{SOURCE0} %{buildroot}%{_sbindir}/%{name}
+%{__install} -p -m 0644 %{SOURCE1} %{buildroot}%{_unitdir}/
+%{__install} -p -m 0644 %{SOURCE2} %{buildroot}%{_sysconfdir}/sheepdog/
+%{__install} -p -m 0644 %{SOURCE3} %{buildroot}%{_defaultdocdir}/%{name}-%{version}/
+%{__install} -p -m 0644 %{SOURCE4} %{buildroot}%{_defaultdocdir}/%{name}-%{version}/
+
+%files
+%defattr(-,root,root,-)
+%{_sbindir}/%{name}
+%{_unitdir}/%{name}.service
+%config(noreplace) %{_sysconfdir}/sheepdog/dockerdriver.json
+%{_defaultdocdir}/%{name}-%{version}
+
+%changelog
+* ${TODAY} ${MAINTAINER}
+- docker-volume-sheepdog: ${DVPSD_VERSION}
