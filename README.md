@@ -74,6 +74,9 @@ Remove the volume:
 $ docker volume rm vol1
 ```
 
+## License
+
+MIT, please see the LICENSE file.
 
 ## Disclaimer
 
