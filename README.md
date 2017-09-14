@@ -1,5 +1,7 @@
 # docker-volume-sheepdog
 
+[![TravisCI](https://travis-ci.org/kazuhisya/docker-volume-sheepdog.svg)](https://travis-ci.org/kazuhisya/docker-volume-sheepdog)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kazuhisya/docker-volume-sheepdog)](https://goreportcard.com/report/github.com/kazuhisya/docker-volume-sheepdog)
 
 Docker Volume plugin to create persistent volumes in a [sheepdog](http://sheepdog.github.io/sheepdog/) cluster.
 
