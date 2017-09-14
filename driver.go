@@ -15,14 +15,18 @@ import (
 
 // Config model
 type Config struct {
-	DefaultVolSz   string
-	MountPoint     string
-	TargetID       string
-	TargetIqn      string
-	TargetBindIP   string
-	TargetBindPort string
-	VdiSuffix      string
-	mountCount     map[string]int
+	DefaultVolSz     string
+	MountPoint       string
+	TargetID         string
+	TargetIqn        string
+	TargetBindIP     string
+	TargetBindPort   string
+	VdiSuffix        string
+	LocalSheepSocket string
+	RemoteSheep      bool
+	RemoteSheepIP    string
+	RemoteSheepPort  string
+	mountCount       map[string]int
 }
 
 // SheepdogDriver model
@@ -42,6 +46,7 @@ func processConfig(cfg string) (Config, error) {
 		log.Fatal("Error parsing json config file: ", err)
 	}
 
+	// Common Setting
 	if conf.MountPoint == "" {
 		conf.MountPoint = "/mnt/sheepdog/mount"
 	}
@@ -49,6 +54,7 @@ func processConfig(cfg string) (Config, error) {
 		conf.DefaultVolSz = "10G"
 	}
 
+	// Target
 	if conf.TargetID == "" {
 		conf.TargetID = "1"
 	}
@@ -61,8 +67,27 @@ func processConfig(cfg string) (Config, error) {
 	if conf.TargetBindPort == "" {
 		conf.TargetBindPort = "3260"
 	}
+
+	// Vdi Suffix
 	if conf.VdiSuffix == "" {
 		conf.VdiSuffix = "dvp"
+	}
+
+	// Local Sheep
+	if conf.LocalSheepSocket == "" {
+		conf.LocalSheepSocket = "/var/lib/sheepdog/sock"
+	}
+
+	// Remote Sheep
+	if conf.RemoteSheep == true {
+		if conf.RemoteSheepIP == "" {
+			log.Fatal("Error Remote sheepdog IP is not set")
+		}
+		if conf.RemoteSheepPort == "" {
+			conf.RemoteSheepPort = "7000"
+		}
+	} else {
+		conf.RemoteSheep = false
 	}
 
 	// Max 128 Lun, include lun 0 ?
@@ -78,6 +103,13 @@ func processConfig(cfg string) (Config, error) {
 	log.Infof("Set TargetBindPort to: %s", conf.TargetBindPort)
 
 	log.Infof("Set VdiSuffix to: %s", conf.VdiSuffix)
+
+	log.Infof("Set LocalSheepSocket to: %s", conf.LocalSheepSocket)
+	log.Infof("Set RemoteSheep to: %s", conf.RemoteSheep)
+	if conf.RemoteSheep == true {
+		log.Infof("Set RemoteSheepIP to: %s", conf.RemoteSheepIP)
+		log.Infof("Set RemoteSheepPort to: %s", conf.RemoteSheepPort)
+	}
 
 	return conf, nil
 }
@@ -156,7 +188,7 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 	}
 
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
-	err := dogVdiCreate(vdiname, volumeSize)
+	err := dogVdiCreate(vdiname, volumeSize, d.Conf.RemoteSheepIP, d.Conf.RemoteSheepPort)
 	if err != nil {
 		err := errors.New("Failed to create vdi")
 		log.Error(err)
@@ -184,7 +216,7 @@ func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	delete(d.Conf.mountCount, r.Name)
 
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
-	err := dogVdiDelete(vdiname)
+	err := dogVdiDelete(vdiname, d.Conf.RemoteSheepIP, d.Conf.RemoteSheepPort)
 	if err != nil {
 		err := errors.New("Failed to delete vdi")
 		log.Error(err)
@@ -237,7 +269,16 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	lun := findVacantLun(d.Conf.TargetID)
 	log.Debug("lun: %s", lun)
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
-	err := tgtLunNew(d.Conf.TargetID, lun, vdiname)
+
+	// Handle Remote Sheep Options
+	var bstore string
+	if d.Conf.RemoteSheep == true {
+		bstore = "tcp:" + d.Conf.RemoteSheepIP + ":" + d.Conf.RemoteSheepPort + ":" + vdiname
+	} else {
+		bstore = "unix:" + d.Conf.LocalSheepSocket + ":" + vdiname
+	}
+
+	err := tgtLunNew(d.Conf.TargetID, lun, bstore)
 	if err != nil {
 		log.Fatal("Error create new lun: ", err)
 	}
@@ -331,7 +372,7 @@ func (d SheepdogDriver) Get(r volume.Request) volume.Response {
 	log.Infof("Get path: %s", path)
 
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
-	vdiexist := dogVdiExist(vdiname)
+	vdiexist := dogVdiExist(vdiname, d.Conf.RemoteSheepIP, d.Conf.RemoteSheepPort)
 	if vdiexist == true {
 		return volume.Response{Volume: &volume.Volume{Name: r.Name, Mountpoint: path}}
 	}
@@ -353,7 +394,7 @@ func (d SheepdogDriver) List(r volume.Request) volume.Response {
 		return volume.Response{}
 	}
 
-	out := dogVdiList(d.Conf.VdiSuffix)
+	out := dogVdiList(d.Conf.VdiSuffix, d.Conf.RemoteSheepIP, d.Conf.RemoteSheepPort)
 	for _, line := range strings.Split(string(out), "\n") {
 		if strings.Contains(line, d.Conf.VdiSuffix) {
 			searchname := d.Conf.VdiSuffix + "-"

@@ -5,5 +5,9 @@
     "TargetIqn": "iqn.2017-09.org.sheepdog-project",
     "TargetBindIP": "127.0.0.1",
     "TargetBindPort": "3260",
-    "VdiSuffix": "dvp"
+    "VdiSuffix": "dvp",
+    "LocalSheepSocket": "/var/lib/sheepdog/sock",
+    "RemoteSheep": false,
+    "RemoteSheepIP": "127.0.0.1",
+    "RemoteSheepPort": "7000"
 }
