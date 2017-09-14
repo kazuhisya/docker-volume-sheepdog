@@ -23,25 +23,49 @@ func iscmdSupported(execCmd string) bool {
 }
 
 // dog vdi create volume 10G
-func dogVdiCreate(vdiname, vdisize string) error {
+func dogVdiCreate(vdiname, vdisize, sheepip, sheepport string) error {
 	log.Debugf("Begin utils.dogVdiCreate: %s, %s", vdiname, vdisize)
-	out, err := exec.Command("sudo", "dog", "vdi", "create", vdiname, vdisize, "-v").CombinedOutput()
+
+	var cmd string
+	if sheepip == "" {
+		cmd = "sudo dog vdi create -v " + vdiname + " " + vdisize
+	} else {
+		cmd = "sudo dog vdi create -v -a " + sheepip + " -p " + sheepport + " " + vdiname + " " + vdisize
+	}
+
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	log.Debug("Result of dogVdiCreate: ", string(out))
+
 	return err
 }
 
 // dog vdi delete volume
-func dogVdiDelete(vdiname string) error {
+func dogVdiDelete(vdiname, sheepip, sheepport string) error {
 	log.Debugf("Begin utils.dogVdiDelete: %s", vdiname)
-	out, err := exec.Command("sudo", "dog", "vdi", "delete", vdiname).CombinedOutput()
+
+	var cmd string
+	if sheepip == "" {
+		cmd = "sudo dog vdi delete " + vdiname
+	} else {
+		cmd = "sudo dog vdi delete -a " + sheepip + " -p " + sheepport + " " + vdiname
+	}
+
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	log.Debug("Result of dogVdiDelete: ", string(out))
 	return err
 }
 
 // dog vdi list
-func dogVdiList(suffix string) (list string) {
+func dogVdiList(suffix, sheepip, sheepport string) (list string) {
 	log.Debugf("Begin utils.dogVdiList:")
-	cmd := "sudo dog vdi list -r |grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
+
+	var cmd string
+	if sheepip == "" {
+		cmd = "sudo dog vdi list -r |grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
+	} else {
+		cmd = "sudo dog vdi list -r -a " + sheepip + " -p " + sheepport + "|grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
+	}
+
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to list vdi: ", err)
@@ -51,10 +75,16 @@ func dogVdiList(suffix string) (list string) {
 	return list
 }
 
-// dog vdi list (find)
-func dogVdiExist(vdiname string) bool {
+// dog vdi list -r |grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
+func dogVdiExist(vdiname, sheepip, sheepport string) bool {
 	log.Debugf("Begin utils.dogVdiExist: %s", vdiname)
-	cmd := "sudo dog vdi list -r |grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
+	var cmd string
+	if sheepip == "" {
+		cmd = "sudo dog vdi list -r |grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
+	} else {
+		cmd = "sudo dog vdi list -r -a " + sheepip + " -p " + sheepport + "|grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
+	}
+
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to list vdi: ", err)
@@ -89,9 +119,8 @@ func tgtTargetBind(tid, tallow string) error {
 }
 
 // tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 2 --bstype sheepdog --backing-store unix:/var/lib/sheepdog/sock:dvp-vol1
-func tgtLunNew(tid, lun, vdiname string) error {
-	log.Debugf("Begin utils.tgtLunNew: %s, %s, %s", tid, lun, vdiname)
-	bstore := "unix:/var/lib/sheepdog/sock:" + vdiname
+func tgtLunNew(tid, lun, bstore string) error {
+	log.Debugf("Begin utils.tgtLunNew: %s, %s, %s", tid, lun, bstore)
 	out, err := exec.Command("sudo", "tgtadm", "--lld", "iscsi", "--mode", "logicalunit",
 		"--op", "new", "--tid", tid, "--lun", lun, "--bstype", "sheepdog",
 		"--backing-store", bstore).CombinedOutput()
