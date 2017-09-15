@@ -22,7 +22,7 @@ clean:
 	rm -fr dist $(NAME)
 
 rpm-deps:
-	yum install -y rpm-build git redhat-rpm-config
+	yum install -y rpm-build go git redhat-rpm-config
 
 rpm: deps compile rpm-deps
 	mkdir -p dist/{BUILD,RPMS,SPECS,SOURCES,SRPMS,install}
@@ -43,4 +43,30 @@ rpm: deps compile rpm-deps
 		--clean \
 		dist/SPECS/$(NAME).spec
 
-.PHONY: compile deps fmt clean rpm-deps rpm
+# for RHEL based system
+# if you want to do this on a debian based system:
+#   apt-get install -y ruby ruby-dev gcc golang git make
+deb-deps:
+	yum install -y go git ruby ruby-devel rubygems
+	gem install fpm
+
+deb: deps compile deb-deps
+	mkdir -p dist/debian/usr/sbin
+	mkdir -p dist/debian/lib/systemd/system/
+	mkdir -p dist/debian/etc/sheepdog
+	mkdir -p dist/debian/usr/share/doc/docker-volume-sheepdog
+	install -m 0755 docker-volume-sheepdog dist/debian/usr/sbin
+	install -m 0644 etc/docker-volume-sheepdog.service dist/debian/lib/systemd/system
+	install -m 0644 etc/dockerdriver.json dist/debian/etc/sheepdog
+	install -m 0644 README.md dist/debian/usr/share/doc/docker-volume-sheepdog
+	install -m 0644 LICENSE dist/debian/usr/share/doc/docker-volume-sheepdog
+	fpm -C dist/debian -m "khara@sios.com" -f \
+		-s dir -t deb -n docker-volume-sheepdog \
+		--license "MIT" --vendor "N/A" \
+		--url "https://github.com/kazuhisya/docker-volume-sheepdog" \
+		--description "Docker Volume Plugin for Sheepdog" \
+		-d tgt -d open-iscsi -d xfsprogs \
+		--version $(DVPSD_VERSION) .
+	rm -rf dist/debian
+
+.PHONY: compile deps fmt clean rpm-deps rpm deb-deps deb

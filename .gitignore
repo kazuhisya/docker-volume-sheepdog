@@ -3,3 +3,4 @@ docker-volume-sheepdog
 dist
 vendor/*/
 *.patch
+*.deb
