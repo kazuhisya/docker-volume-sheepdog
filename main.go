@@ -21,7 +21,7 @@ var (
 	defaultDir = filepath.Join(volume.DefaultDockerRootDirectory, "sheepdog")
 	debug      = flag.Bool("debug", false, "Enable debug logging")
 	version    = flag.Bool("version", false, "Version of Docker Volume Plugin for Sheepdog")
-	cfgFile    = flag.String("config", "/etc/sheepdog/dockerdriver.json", "path to config file")
+	cfgFile    = flag.String("config", "/etc/docker-volume-plugin.d/sheepdog.json", "path to config file")
 )
 
 func main() {

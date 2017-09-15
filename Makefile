@@ -19,7 +19,7 @@ fmt:
 	gofmt -s -w -l .
 
 clean:
-	rm -fr dist $(NAME)
+	rm -fr dist $(NAME) *.rpm *.deb
 
 rpm-deps:
 	yum install -y rpm-build go git redhat-rpm-config
@@ -34,7 +34,8 @@ rpm: deps compile rpm-deps
 		envsubst '$$GIT_COMMIT, $$MAINTAINER, $$DVPSD_VERSION, $$TODAY' > dist/SPECS/$(NAME).spec
 	cp $(NAME) dist/SOURCES/
 	cp etc/$(NAME).service dist/SOURCES/
-	cp etc/dockerdriver.json dist/SOURCES/
+	cp etc/sheepdog.json dist/SOURCES/
+	cp etc/sheepdog-sample.json dist/SOURCES/
 	cp README.md dist/SOURCES/
 	cp LICENSE dist/SOURCES/
 	rpmbuild -ba \
@@ -42,6 +43,8 @@ rpm: deps compile rpm-deps
 		--define "buildroot $(PWD)/dist/install" \
 		--clean \
 		dist/SPECS/$(NAME).spec
+	cp dist/RPMS/x86_64/docker-volume-sheepdog-*.rpm .
+	rm -rf dist/{BUILDROOT,BUILD,SPECS,SOURCES,install}
 
 # for RHEL based system
 # if you want to do this on a debian based system:
@@ -52,18 +55,19 @@ deb-deps:
 
 deb: deps compile deb-deps
 	mkdir -p dist/debian/usr/sbin
-	mkdir -p dist/debian/lib/systemd/system/
-	mkdir -p dist/debian/etc/sheepdog
-	mkdir -p dist/debian/usr/share/doc/docker-volume-sheepdog
-	install -m 0755 docker-volume-sheepdog dist/debian/usr/sbin
-	install -m 0644 etc/docker-volume-sheepdog.service dist/debian/lib/systemd/system
-	install -m 0644 etc/dockerdriver.json dist/debian/etc/sheepdog
-	install -m 0644 README.md dist/debian/usr/share/doc/docker-volume-sheepdog
-	install -m 0644 LICENSE dist/debian/usr/share/doc/docker-volume-sheepdog
+	mkdir -p dist/debian/lib/systemd/system
+	mkdir -p dist/debian/etc/docker-volume-plugin.d
+	mkdir -p dist/debian/usr/share/doc/$(NAME)
+	install -m 0755 $(NAME) dist/debian/usr/sbin
+	install -m 0644 etc/$(NAME).service dist/debian/lib/systemd/system
+	install -m 0644 etc/sheepdog.json dist/debian/etc/docker-volume-plugin.d
+	install -m 0644 etc/sheepdog-sample.json dist/debian/etc/docker-volume-plugin.d
+	install -m 0644 README.md dist/debian/usr/share/doc/$(NAME)
+	install -m 0644 LICENSE dist/debian/usr/share/doc/$(NAME)
 	fpm -C dist/debian -m "khara@sios.com" -f \
-		-s dir -t deb -n docker-volume-sheepdog \
+		-s dir -t deb -n $(NAME) \
 		--license "MIT" --vendor "N/A" \
-		--url "https://github.com/kazuhisya/docker-volume-sheepdog" \
+		--url "https://github.com/kazuhisya/$(NAME)" \
 		--description "Docker Volume Plugin for Sheepdog" \
 		-d tgt -d open-iscsi -d xfsprogs \
 		--version $(DVPSD_VERSION) .

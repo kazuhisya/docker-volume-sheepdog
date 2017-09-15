@@ -1,0 +1,5 @@
+{
+    "MountPoint": "/mnt/sheepdog",
+    "DefaultVolSz": "10G",
+    "VdiSuffix": "dvp",
+}
