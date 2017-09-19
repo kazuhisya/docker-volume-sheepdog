@@ -2,7 +2,7 @@
     "MountPoint": "/mnt/sheepdog",
     "DefaultVolSz": "10G",
     "TargetID": "1",
-    "TargetIqn": "iqn.2017-09.org.sheepdog-project",
+    "TargetIqn": "iqn.2017-09.org.sheepdog-docker",
     "TargetBindIP": "127.0.0.1",
     "TargetBindPort": "3260",
     "VdiSuffix": "dvp",
