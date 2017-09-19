@@ -69,7 +69,7 @@ deb: deps compile deb-deps
 		--license "MIT" --vendor "N/A" \
 		--url "https://github.com/kazuhisya/$(NAME)" \
 		--description "Docker Volume Plugin for Sheepdog" \
-		-d tgt -d open-iscsi -d xfsprogs \
+		-d tgt -d open-iscsi -d xfsprogs -d sudo \
 		--version $(DVPSD_VERSION) .
 	rm -rf dist/debian
 

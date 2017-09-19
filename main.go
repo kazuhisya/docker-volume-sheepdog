@@ -40,6 +40,11 @@ func main() {
 	log.Info("Starting sheepdog-docker-driver version: ", VERSION)
 
 	// check cmd support
+	if iscmdSupported("sudo") == false {
+		err := errors.New("sudo command not found on this host")
+		log.Error(err)
+		os.Exit(1)
+	}
 	if iscmdSupported("iscsiadm") == false {
 		err := errors.New("iscsi-initiator-utils(iscsiadm command) not found on this host")
 		log.Error(err)

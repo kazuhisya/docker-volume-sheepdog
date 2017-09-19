@@ -16,6 +16,7 @@ Source4:	sheepdog.json
 Source5:	sheepdog-sample.json
 
 BuildRequires:	systemd-units
+Requires:	sudo
 Requires:	scsi-target-utils
 Requires:	iscsi-initiator-utils
 Requires:	sheepdog

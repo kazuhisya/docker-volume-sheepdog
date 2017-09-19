@@ -17,6 +17,7 @@ The driver is based on [the Docker Volume Plugin framework](https://docs.docker.
 ## System Requirements
 
 - Docker Engine: 1.13.0+
+- `sudo` command
 - xfsprogs (`mkfs.xfs` command)
 - iscsi-initiator-utils (`iscsiadm` command)
 - scsi-target-utils (`tgtadm` command)
