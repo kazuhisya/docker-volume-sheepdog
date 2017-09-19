@@ -115,26 +115,26 @@ func processConfig(cfg string) (Config, error) {
 }
 
 func prepareTarget(tid string, tiqn string, tip string, tport string) bool {
-	log.Infof("Start tgtTargetNew")
+	log.Info("Start tgtTargetNew")
 	err := tgtTargetNew(tid, tiqn)
 	if err != nil {
 		log.Debug("Error unit.tgtTargetNew: ", err)
 	}
 
-	log.Infof("Start tgtTargetBind")
+	log.Info("Start tgtTargetBind")
 	err = tgtTargetBind(tid, tip)
 	if err != nil {
 		log.Debug("Error unit.tgtTargetBind: ", err)
 	}
 
-	log.Infof("Start iscsiDiscovery")
+	log.Info("Start iscsiDiscovery")
 	targets, err := iscsiDiscovery(string(tip + ":" + tport))
 	if err != nil {
 		log.Debug("Error unit.iscsiDiscovery: ", err)
 	}
 	log.Debug("Discovery target: %w", targets)
 
-	log.Infof("Start iscsiLogin")
+	log.Info("Start iscsiLogin")
 	err = iscsiLogin(tiqn, string(tip+":"+tport))
 	if err != nil {
 		log.Debug("Error unit.iscsiLogin: ", err)
@@ -249,7 +249,7 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	// make sure that it is already mounting for another container
 	if isAlreadyMountingThisVolume(d.Conf.MountPoint+"/"+r.Name) == true {
 		// already mounting
-		log.Infof("Mountpoint is already used: %s", r.Name)
+		log.Debug("Mountpoint is already used: %s", r.Name)
 		d.Conf.mountCount[r.Name]++
 		log.Debug("Count %s", d.Conf.mountCount[r.Name])
 		// skip all and return now
@@ -258,7 +258,7 @@ func (d SheepdogDriver) Mount(r volume.MountRequest) volume.Response {
 	// double check
 	log.Debug("Count %s", d.Conf.mountCount[r.Name])
 	if d.Conf.mountCount[r.Name] != 0 {
-		log.Infof("Mountpoint is already used: %s", r.Name)
+		log.Debug("Mountpoint is already used: %s", r.Name)
 		d.Conf.mountCount[r.Name]++
 		log.Debug("Count %s", d.Conf.mountCount[r.Name])
 		return volume.Response{Mountpoint: d.Conf.MountPoint + "/" + r.Name}

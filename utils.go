@@ -360,7 +360,7 @@ func umount(mountpoint string) error {
 
 // waitForDetectDevice
 func waitForDetectDevice(device string, tries int) bool {
-	log.Info("Waiting for path")
+	log.Debugf("Waiting for path")
 	for i := 0; i < tries; i++ {
 		_, err := os.Stat(device)
 		if err == nil {
