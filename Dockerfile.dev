@@ -1,0 +1,20 @@
+# vi: set ft=dockerfile :
+
+FROM centos:7
+MAINTAINER Kazuhisa Hara <khara@sios.com>
+
+ENV TZ="JST-9"
+
+RUN yum install -y --setopt=tsflags=nodocs \
+        gettext git go make redhat-rpm-config rpm-build \
+        ruby ruby-devel rubygems
+
+COPY . /root/go/src/github.com/kazuhisya/docker-volume-sheepdog/
+WORKDIR /root/go/src/github.com/kazuhisya/docker-volume-sheepdog
+
+RUN go get -u github.com/kardianos/govendor &&\
+    /root/go/bin/govendor sync
+RUN make deps &&\
+    make compile -j
+RUN make rpm -j && \
+    make deb -j
