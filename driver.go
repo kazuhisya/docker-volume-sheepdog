@@ -227,7 +227,6 @@ func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	log.Debug("remove path: ", path)
 	if err := os.Remove(path); err != nil {
 		log.Errorf("Failed to remove Mount directory: %v", err)
-		return volume.Response{Err: err.Error()}
 	}
 	return volume.Response{}
 }
