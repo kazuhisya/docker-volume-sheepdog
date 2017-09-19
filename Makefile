@@ -64,7 +64,7 @@ deb: deps compile deb-deps
 	install -m 0644 etc/sheepdog-sample.json dist/debian/etc/docker-volume-plugin.d
 	install -m 0644 README.md dist/debian/usr/share/doc/$(NAME)
 	install -m 0644 LICENSE dist/debian/usr/share/doc/$(NAME)
-	fpm -C dist/debian -m "khara@sios.com" -f \
+	fpm -C dist/debian -m $(GIT_EMAIL) -f \
 		-s dir -t deb -n $(NAME) \
 		--license "MIT" --vendor "N/A" \
 		--url "https://github.com/kazuhisya/$(NAME)" \
