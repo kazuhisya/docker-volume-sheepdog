@@ -22,7 +22,7 @@ clean:
 	rm -fr dist $(NAME) *.rpm *.deb
 
 rpm-deps:
-	yum install -y rpm-build go git redhat-rpm-config
+	yum install -y rpm-build go git redhat-rpm-config gettext
 
 rpm: deps compile rpm-deps
 	mkdir -p dist/{BUILD,RPMS,SPECS,SOURCES,SRPMS,install}
