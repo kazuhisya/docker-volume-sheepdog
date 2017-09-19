@@ -279,7 +279,7 @@ func getDeviceFileFromIscsiPath(iscsiPath string) (devFile string) {
 func getFSType(device string) string {
 	log.Debugf("Begin utils.getFSType: %s", device)
 	fsType := ""
-	out, err := exec.Command("blkid", device).CombinedOutput()
+	out, err := exec.Command("sudo", "blkid", device).CombinedOutput()
 	if err != nil {
 		return fsType
 	}
@@ -303,7 +303,7 @@ func formatVolume(device, fsType string) error {
 		cmd = "mkfs.xfs"
 	}
 	log.Debug("Perform ", cmd, " on device: ", device)
-	out, err := exec.Command(cmd, "-f", device).CombinedOutput()
+	out, err := exec.Command("sudo", cmd, "-f", device).CombinedOutput()
 	log.Debug("Result of mkfs cmd: ", string(out))
 
 	return err
@@ -312,8 +312,8 @@ func formatVolume(device, fsType string) error {
 // mount
 func mount(device, mountpoint string) error {
 	log.Debugf("Begin utils.mount device: %s on: %s", device, mountpoint)
-	out, err := exec.Command("mkdir", "-p", mountpoint).CombinedOutput()
-	out, err = exec.Command("mount", device, mountpoint).CombinedOutput()
+	out, err := exec.Command("sudo", "mkdir", "-p", mountpoint).CombinedOutput()
+	out, err = exec.Command("sudo", "mount", device, mountpoint).CombinedOutput()
 	log.Debug("Response from mount ", device, " at ", mountpoint, ": ", string(out))
 	if err != nil {
 		log.Error("Error in mount: ", err)
@@ -347,7 +347,7 @@ func isAlreadyMountingThisVolume(mountpoint string) bool {
 // umount
 func umount(mountpoint string) error {
 	log.Debugf("Begin utils.Umount: %s", mountpoint)
-	out, err := exec.Command("umount", mountpoint).CombinedOutput()
+	out, err := exec.Command("sudo", "umount", mountpoint).CombinedOutput()
 	if err != nil {
 		log.Warningf("Unmount call returned error: %s (%s)", err, out)
 		if strings.Contains(string(out), "not mounted") {
