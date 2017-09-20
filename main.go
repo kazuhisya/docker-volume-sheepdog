@@ -9,12 +9,25 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
+	"time"
 )
 
-const (
-	// VERSION release number
-	VERSION = "0.0.1"
+var (
+	// Version release number
+	Version = "0.0.1"
+	// Short commit id from git
+	// If this var isn't given when building, this value will be used.
+	gitHash = "Custom Build"
+	// buildDate from time.Now
+	buildDate = string(time.Now().Format("2006-01-02"))
+	// go version
+	// e.g. "go1.8.3 linux/amd64"
+	o         = runtime.GOOS
+	a         = runtime.GOARCH
+	v         = runtime.Version()
+	goVersion = v + " " + o + "/" + a
 )
 
 var (
@@ -28,7 +41,8 @@ func main() {
 	flag.Parse()
 	if *version {
 		fmt.Println("Docker Volume Plugin for Sheepdog")
-		fmt.Println("Version : ", VERSION)
+		fmt.Printf("Version : %s (%s)\n", Version, gitHash)
+		fmt.Printf("Build at %s with %s\n", buildDate, goVersion)
 		os.Exit(0)
 	}
 	if *debug {
@@ -37,7 +51,7 @@ func main() {
 		log.SetLevel(log.InfoLevel)
 	}
 
-	log.Info("Starting sheepdog-docker-driver version: ", VERSION)
+	log.Info("Starting sheepdog-docker-driver version: ", Version)
 
 	// check cmd support
 	if iscmdSupported("sudo") == false {

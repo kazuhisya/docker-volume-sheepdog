@@ -1,16 +1,17 @@
 NAME := docker-volume-sheepdog
 TODAY := $(shell LANG=c date +"%a %b %e %Y")
-GIT_COMMIT := $(shell git show -s --format=%H)
+GIT_COMMIT := $(shell git rev-parse HEAD)
+GIT_COMMIT_S := $(shell git rev-parse --short HEAD)
 GIT_USER := $(shell git config user.name)
 GIT_EMAIL := $(shell git config user.email)
 MAINTAINER := $(GIT_USER) <$(GIT_EMAIL)>
-DVPSD_VERSION := $(shell grep "VERSION =" main.go  | tr -s " "| cut -d " " -f 3 | sed "s/\"//g")
+DVPSD_VERSION := $(shell grep -w "Version =" main.go  | tr -s " "| cut -d " " -f 3 | sed "s/\"//g")
 
 
 all: deps compile
 
 compile:
-	go build
+	go build -ldflags "-X main.gitHash=$(GIT_COMMIT_S)"
 
 deps:
 	go get
