@@ -5,7 +5,7 @@ After=tgtd.service
 Requires=tgtd.service
 
 [Service]
-ExecStart=/sbin/docker-volume-sheepdog -config /etc/sheepdog/dockerdriver.json
+ExecStart=/sbin/docker-volume-sheepdog -config /etc/docker-volume-plugin.d/sheepdog.json
 
 [Install]
 WantedBy=multi-user.target
