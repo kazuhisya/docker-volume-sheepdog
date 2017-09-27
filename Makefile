@@ -2,7 +2,13 @@ NAME := docker-volume-sheepdog
 TODAY := $(shell LANG=c date +"%a %b %e %Y")
 GIT_COMMIT_S := $(shell git rev-parse --short HEAD)
 GIT_USER := $(shell git config user.name)
+ifeq ($(GIT_USER),)
+	GIT_USER=root
+endif
 GIT_EMAIL := $(shell git config user.email)
+ifeq ($(GIT_EMAIL),)
+	GIT_EMAIL=root@localhost
+endif
 MAINTAINER := $(GIT_USER) <$(GIT_EMAIL)>
 DVPSD_VERSION := $(shell git describe --tags --dirty | sed "s/^v//" | tr "-" "_" | tr -d "\n")
 DVPSD_VERSION_DEB := $(shell echo $(DVPSD_VERSION) | sed s/_/+/ | sed s/_/./g)-1
@@ -66,7 +72,7 @@ deb: deps compile deb-deps
 	install -m 0644 LICENSE dist/debian/usr/share/doc/$(NAME)
 	fpm -C dist/debian -m $(GIT_EMAIL) -f \
 		-s dir -t deb -n $(NAME) \
-		--license "MIT" --vendor "N/A" \
+		--license "MIT" --vendor "$(GIT_USER)" \
 		--url "https://github.com/kazuhisya/$(NAME)" \
 		--description "Docker Volume Plugin for Sheepdog" \
 		-d tgt -d open-iscsi -d xfsprogs -d sudo \
