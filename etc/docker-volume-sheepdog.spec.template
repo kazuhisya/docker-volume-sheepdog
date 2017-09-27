@@ -1,10 +1,8 @@
-%global commit	    ${GIT_COMMIT}
-%global shortcommit %(c=%{commit}; echo ${c:0:7})
-%define dist	    %(sh /usr/lib/rpm/redhat/dist.sh)
+%define dist	%(sh /usr/lib/rpm/redhat/dist.sh)
 
 Name:		docker-volume-sheepdog
 Version:	${DVPSD_VERSION}
-Release:	1.git%{shortcommit}%{?dist}
+Release:	1%{?dist}
 Summary:	Docker Volume Plugin for Sheepdog
 License:	MIT
 URL:		https://github.com/kazuhisya/docker-volume-sheepdog

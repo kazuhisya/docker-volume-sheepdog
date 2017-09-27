@@ -1,11 +1,11 @@
 NAME := docker-volume-sheepdog
 TODAY := $(shell LANG=c date +"%a %b %e %Y")
-GIT_COMMIT := $(shell git rev-parse HEAD)
 GIT_COMMIT_S := $(shell git rev-parse --short HEAD)
 GIT_USER := $(shell git config user.name)
 GIT_EMAIL := $(shell git config user.email)
 MAINTAINER := $(GIT_USER) <$(GIT_EMAIL)>
-DVPSD_VERSION := $(shell grep -w "Version =" main.go  | tr -s " "| cut -d " " -f 3 | sed "s/\"//g")
+DVPSD_VERSION := $(shell git describe --tags --dirty | sed "s/^v//" | tr "-" "_" | tr -d "\n")
+DVPSD_VERSION_DEB := $(shell echo $(DVPSD_VERSION) | sed s/_/+/ | sed s/_/./g)-1
 
 
 all: deps compile
@@ -28,11 +28,10 @@ rpm-deps:
 rpm: deps compile rpm-deps
 	mkdir -p dist/{BUILD,RPMS,SPECS,SOURCES,SRPMS,install}
 	cat etc/$(NAME).spec.template | \
-		GIT_COMMIT="$(GIT_COMMIT)" \
 		MAINTAINER="$(MAINTAINER)" \
 		DVPSD_VERSION="$(DVPSD_VERSION)" \
 		TODAY="$(TODAY)" \
-		envsubst '$$GIT_COMMIT, $$MAINTAINER, $$DVPSD_VERSION, $$TODAY' > dist/SPECS/$(NAME).spec
+		envsubst '$$MAINTAINER, $$DVPSD_VERSION, $$TODAY' > dist/SPECS/$(NAME).spec
 	cp $(NAME) dist/SOURCES/
 	cp etc/$(NAME).service dist/SOURCES/
 	cp etc/sheepdog.json dist/SOURCES/
@@ -71,7 +70,7 @@ deb: deps compile deb-deps
 		--url "https://github.com/kazuhisya/$(NAME)" \
 		--description "Docker Volume Plugin for Sheepdog" \
 		-d tgt -d open-iscsi -d xfsprogs -d sudo \
-		--version $(DVPSD_VERSION) .
+		--version $(DVPSD_VERSION_DEB) .
 	rm -rf dist/debian
 
 .PHONY: compile deps fmt clean rpm-deps rpm deb-deps deb
