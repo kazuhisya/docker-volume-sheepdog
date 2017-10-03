@@ -26,7 +26,12 @@ func iscmdSupported(execCmd string) bool {
 func dogVdiCreate(vdiname, vdisize, sheepip, sheepport string, opts map[string]string) error {
 	log.Debugf("Begin utils.dogVdiCreate: %s, %s", vdiname, vdisize)
 
-	var otheropts string
+	var (
+		otheropts string
+		sheepopts string
+		cmd       string
+	)
+
 	if opts["prealloc"] == "true" {
 		otheropts += " --prealloc"
 	}
@@ -41,13 +46,12 @@ func dogVdiCreate(vdiname, vdisize, sheepip, sheepport string, opts map[string]s
 	}
 	log.Debugf("utils.dogVdiCreate options: %s", otheropts)
 
-	var cmd string
-	if sheepip == "" {
-		cmd = "sudo dog vdi create -v " + vdiname + " " + vdisize + otheropts
-	} else {
-		cmd = "sudo dog vdi create -v -a " + sheepip + " -p " + sheepport + " " + vdiname + " " + vdisize + otheropts
+	if sheepip != "" {
+		sheepopts = "-a " + sheepip + " -p " + sheepport
 	}
+	log.Debugf("utils.dogVdiCreate sheep options: %s", sheepopts)
 
+	cmd = "sudo dog vdi create -v " + sheepopts + " " + vdiname + " " + vdisize + otheropts
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	log.Debug("Result of dogVdiCreate: ", string(out))
 
@@ -58,13 +62,17 @@ func dogVdiCreate(vdiname, vdisize, sheepip, sheepport string, opts map[string]s
 func dogVdiDelete(vdiname, sheepip, sheepport string) error {
 	log.Debugf("Begin utils.dogVdiDelete: %s", vdiname)
 
-	var cmd string
-	if sheepip == "" {
-		cmd = "sudo dog vdi delete " + vdiname
-	} else {
-		cmd = "sudo dog vdi delete -a " + sheepip + " -p " + sheepport + " " + vdiname
-	}
+	var (
+		sheepopts string
+		cmd       string
+	)
 
+	if sheepip != "" {
+		sheepopts = "-a " + sheepip + " -p " + sheepport
+	}
+	log.Debugf("utils.dogVdiCreate sheep options: %s", sheepopts)
+
+	cmd = "sudo dog vdi delete " + sheepopts + " " + vdiname
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	log.Debug("Result of dogVdiDelete: ", string(out))
 	return err
@@ -74,13 +82,17 @@ func dogVdiDelete(vdiname, sheepip, sheepport string) error {
 func dogVdiList(suffix, sheepip, sheepport string) (list string) {
 	log.Debugf("Begin utils.dogVdiList:")
 
-	var cmd string
-	if sheepip == "" {
-		cmd = "sudo dog vdi list -r |grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
-	} else {
-		cmd = "sudo dog vdi list -r -a " + sheepip + " -p " + sheepport + "|grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
-	}
+	var (
+		sheepopts string
+		cmd       string
+	)
 
+	if sheepip != "" {
+		sheepopts = "-a " + sheepip + " -p " + sheepport
+	}
+	log.Debugf("utils.dogVdiCreate sheep options: %s", sheepopts)
+
+	cmd = "sudo dog vdi list -r " + sheepopts + " |grep  ^= | grep " + suffix + " |cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to list vdi: ", err)
@@ -93,13 +105,17 @@ func dogVdiList(suffix, sheepip, sheepport string) (list string) {
 // dog vdi list -r |grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
 func dogVdiExist(vdiname, sheepip, sheepport string) bool {
 	log.Debugf("Begin utils.dogVdiExist: %s", vdiname)
-	var cmd string
-	if sheepip == "" {
-		cmd = "sudo dog vdi list -r |grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
-	} else {
-		cmd = "sudo dog vdi list -r -a " + sheepip + " -p " + sheepport + "|grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
-	}
+	var (
+		sheepopts string
+		cmd       string
+	)
 
+	if sheepip != "" {
+		sheepopts = "-a " + sheepip + " -p " + sheepport
+	}
+	log.Debugf("utils.dogVdiCreate sheep options: %s", sheepopts)
+
+	cmd = "sudo dog vdi list -r " + sheepopts + "|grep  ^= | grep -w " + vdiname + "|cut -d' ' -f 2"
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
 		log.Error("Failed to list vdi: ", err)
