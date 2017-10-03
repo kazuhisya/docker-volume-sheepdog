@@ -187,8 +187,30 @@ func (d SheepdogDriver) Create(r volume.Request) volume.Response {
 		volumeSize = d.Conf.DefaultVolSz
 	}
 
+	opts := make(map[string]string)
+	// prealloc: preallocate all the data objects
+	if ok := r.Options["prealloc"]; ok == "true" {
+		opts["prealloc"] = "true"
+	}
+
+	// hyper: create a hyper volume, for over 4TB
+	if ok := r.Options["hyper"]; ok == "true" {
+		opts["hyper"] = "true"
+	}
+
+	// copies: specify the data redundancy level
+	if optsCopies, ok := r.Options["copies"]; ok {
+		opts["copies"] = optsCopies
+	}
+
+	// bsize: specify the bit shift num for data object size
+	// a.k.a. -z, --block_size_shift
+	if optsBsize, ok := r.Options["bsize"]; ok {
+		opts["bsize"] = optsBsize
+	}
+
 	vdiname := d.Conf.VdiSuffix + "-" + r.Name
-	err := dogVdiCreate(vdiname, volumeSize, d.Conf.RemoteSheepIP, d.Conf.RemoteSheepPort)
+	err := dogVdiCreate(vdiname, volumeSize, d.Conf.RemoteSheepIP, d.Conf.RemoteSheepPort, opts)
 	if err != nil {
 		err := errors.New("Failed to create vdi")
 		log.Error(err)

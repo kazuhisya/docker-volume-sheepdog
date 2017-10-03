@@ -23,14 +23,29 @@ func iscmdSupported(execCmd string) bool {
 }
 
 // dog vdi create volume 10G
-func dogVdiCreate(vdiname, vdisize, sheepip, sheepport string) error {
+func dogVdiCreate(vdiname, vdisize, sheepip, sheepport string, opts map[string]string) error {
 	log.Debugf("Begin utils.dogVdiCreate: %s, %s", vdiname, vdisize)
+
+	var otheropts string
+	if opts["prealloc"] == "true" {
+		otheropts += " --prealloc"
+	}
+	if opts["hyper"] == "true" {
+		otheropts += " --hyper"
+	}
+	if opts["copies"] != "" {
+		otheropts += " --copies " + opts["copies"]
+	}
+	if opts["bsize"] != "" {
+		otheropts += " --block_size_shift " + opts["bsize"]
+	}
+	log.Debugf("utils.dogVdiCreate options: %s", otheropts)
 
 	var cmd string
 	if sheepip == "" {
-		cmd = "sudo dog vdi create -v " + vdiname + " " + vdisize
+		cmd = "sudo dog vdi create -v " + vdiname + " " + vdisize + otheropts
 	} else {
-		cmd = "sudo dog vdi create -v -a " + sheepip + " -p " + sheepport + " " + vdiname + " " + vdisize
+		cmd = "sudo dog vdi create -v -a " + sheepip + " -p " + sheepport + " " + vdiname + " " + vdisize + otheropts
 	}
 
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
