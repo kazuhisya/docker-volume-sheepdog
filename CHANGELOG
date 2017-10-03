@@ -1,5 +1,10 @@
 # ChangeLog
 
+* Tue Oct  3 2017 Kazuhisa Hara <khara@sois.com> - 0.1.2
+- utils: unified the way to pass sheep remote IP and port options
+- driver, utils: pass options to the sheep command when vdi create
+- Makefile: changed package versioning method
+
 * Tue Sep 26 2017 Kazuhisa Hara <khara@sois.com> - 0.1.1
 - etc: fixed incorrect file path
 

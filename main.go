@@ -16,7 +16,7 @@ import (
 
 var (
 	// Version release number
-	Version = "0.1.1"
+	Version = "0.1.2"
 	// Short commit id from git
 	// If this var isn't given when building, this value will be used.
 	gitHash = "Custom Build"
