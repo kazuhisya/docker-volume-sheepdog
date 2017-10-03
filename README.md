@@ -22,6 +22,8 @@ In this case, it will be created with default volume size (`DefaultVolSz` is be 
 If you want to specify it explicitly, can use the `-o size=` option.
 The syntax is equivalent to the `dog` command.(`10G`, `10M` ...)
 
+For other options please check ours [wiki](https://github.com/kazuhisya/docker-volume-sheepdog/wiki/Volume-Create-Options).
+
 ```
 $ docker volume create -d sheepdog vol1 -o size=12G
 ```
