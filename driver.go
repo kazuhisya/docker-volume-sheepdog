@@ -246,9 +246,12 @@ func (d SheepdogDriver) Remove(r volume.Request) volume.Response {
 	}
 
 	path := filepath.Join(d.Conf.MountPoint, r.Name)
-	log.Debug("remove path: ", path)
-	if err := os.Remove(path); err != nil {
-		log.Errorf("Failed to remove Mount directory: %v", err)
+	_, err = os.Stat(path)
+	if err == nil {
+		log.Debug("remove path: ", path)
+		if err := os.Remove(path); err != nil {
+			log.Errorf("Failed to remove Mount directory: %v", err)
+		}
 	}
 	return volume.Response{}
 }
@@ -377,10 +380,13 @@ func (d SheepdogDriver) Unmount(r volume.UnmountRequest) volume.Response {
 		log.Debug("Count %s", d.Conf.mountCount[r.Name])
 
 		path := filepath.Join(d.Conf.MountPoint, r.Name)
-		log.Debug("remove path: ", path)
-		if err := os.Remove(path); err != nil {
-			log.Errorf("Failed to remove Mount directory: %v", err)
-			return volume.Response{Err: err.Error()}
+		_, err = os.Stat(path)
+		if err == nil {
+			log.Debug("remove path: ", path)
+			if err := os.Remove(path); err != nil {
+				log.Errorf("Failed to remove Mount directory: %v", err)
+				return volume.Response{Err: err.Error()}
+			}
 		}
 	}
 	return volume.Response{}
