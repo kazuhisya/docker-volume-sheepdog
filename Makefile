@@ -29,7 +29,7 @@ clean:
 	rm -fr dist $(NAME) *.rpm *.deb
 
 rpm-deps:
-	yum install -y rpm-build go git redhat-rpm-config gettext
+	sudo yum install -y rpm-build go git redhat-rpm-config gettext
 
 rpm: deps compile rpm-deps
 	mkdir -p dist/{BUILD,RPMS,SPECS,SOURCES,SRPMS,install}
@@ -56,7 +56,7 @@ rpm: deps compile rpm-deps
 # if you want to do this on a debian based system:
 #   apt-get install -y ruby ruby-dev gcc golang git make
 deb-deps:
-	yum install -y go git ruby ruby-devel rubygems
+	sudo yum install -y go git ruby ruby-devel rubygems
 	gem install fpm
 
 deb: deps compile deb-deps

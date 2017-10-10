@@ -7,14 +7,21 @@ ENV TZ="JST-9"
 
 RUN yum install -y --setopt=tsflags=nodocs \
         gettext git go make redhat-rpm-config rpm-build \
-        ruby ruby-devel rubygems
+        ruby ruby-devel rubygems sudo
 
-COPY . /root/go/src/github.com/kazuhisya/docker-volume-sheepdog/
-WORKDIR /root/go/src/github.com/kazuhisya/docker-volume-sheepdog
 
-RUN go get -u github.com/kardianos/govendor &&\
-    /root/go/bin/govendor sync
-RUN make deps &&\
+RUN useradd -m mock && \
+    echo "mock    ALL=(ALL)       NOPASSWD: ALL" >> /etc/sudoers.d/mock
+COPY . /home/mock/go/src/github.com/kazuhisya/docker-volume-sheepdog/
+RUN chown mock.mock -R /home/mock
+
+USER mock
+WORKDIR /home/mock/go/src/github.com/kazuhisya/docker-volume-sheepdog
+ENV PATH="$PATH:/home/mock/.local/bin:/home/mock/bin"
+
+RUN go get -u github.com/kardianos/govendor && \
+    /home/mock/go/bin/govendor sync
+RUN make deps && \
     make compile -j
 RUN make rpm -j && \
     make deb -j
