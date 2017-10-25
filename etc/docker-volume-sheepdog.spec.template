@@ -47,7 +47,7 @@ Docker Volume plugin to create persistent volumes in a sheepdog cluster.
 %{_sbindir}/%{name}
 %{_unitdir}/%{name}.service
 %config(noreplace) %{_sysconfdir}/docker-volume-plugin.d/sheepdog.json
-%config(noreplace) %{_sysconfdir}/docker-volume-plugin.d/sheepdog-sample.json
+%{_sysconfdir}/docker-volume-plugin.d/sheepdog-sample.json
 %{_defaultdocdir}/%{name}-%{version}
 
 %changelog
